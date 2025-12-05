@@ -3,7 +3,8 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
     <title>{{ t.name }} - Bracket</title>
     <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.svg') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='src/main.css') }}">
@@ -86,55 +87,64 @@
             display: none;
         }
 
+        /* Fix iOS Notch jumping when modal opens */
+        html:has(dialog[open]) {
+            overflow: hidden;
+            /* Prevent background scrolling */
+            height: 100vh;
+            height: -webkit-fill-available;
+        }
+
+        /* Force body to stay pinned to top */
+        body:has(dialog[open]) {
+            position: fixed;
+            width: 100%;
+            top: 0;
+            left: 0;
+            /* Retain safe area padding */
+            padding-top: env(safe-area-inset-top) !important;
+        }
+
+        dialog {
+            /* Ensure the modal itself never overlaps the notch or home bar */
+            margin-top: auto;
+            margin-bottom: auto;
+            max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 2rem);
+
+            /* Fix for iOS keyboard pushing things off screen */
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+        }
+
+        /* Ensure the backdrop respects the safe area if needed, 
+        though usually full screen is preferred for backdrop */
+        dialog::backdrop {
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+        }
+
         @media (max-width: 768px) {
             main {
                 padding-bottom: 3.5rem;
             }
-        }
-
-        /* Live Indicator Animation */
-        @keyframes pulse-live {
-            0% {
-                opacity: 1;
-                transform: scale(1);
-            }
-
-            50% {
-                opacity: 0.5;
-                transform: scale(1.1);
-            }
-
-            100% {
-                opacity: 1;
-                transform: scale(1);
-            }
-        }
-
-        .live-dot {
-            width: 8px;
-            height: 8px;
-            background-color: #22c55e;
-            border-radius: 50%;
-            display: inline-block;
-            animation: pulse-live 2s infinite;
-            margin-right: 6px;
         }
     </style>
 </head>
 
 <body class="bg-slate-950 text-slate-100 font-sans h-screen flex flex-col overflow-hidden">
 
-    <nav class="bg-slate-900 border-b border-slate-800 p-3 shadow-md z-50 shrink-0">
+    <nav
+        class="pt-[calc(0.75rem+env(safe-area-inset-top))] bg-slate-900 border-b border-slate-800 p-3 shadow-md z-50 shrink-0">
         <div class="flex justify-between items-center h-10 max-w-7xl mx-auto w-full">
-            <a href="/" class="text-slate-400 hover:text-orange-500 transition p-2 -ml-2"><i
+            <a href="/"
+                class="flex items-center justify-center text-slate-400 hover:text-orange-500 transition p-2 -ml-2"><i
                     class="ph ph-house text-xl"></i></a>
 
             <!-- Center: Title + Live Indicator -->
             <div class="text-center absolute left-1/2 -translate-x-1/2 flex flex-col items-center">
                 <h1 class="text-base font-bold text-white truncate max-w-[200px]" id="navTitle">{{ t.name }}</h1>
-                <div class="text-[9px] text-green-500 font-bold uppercase tracking-widest flex items-center mt-0.5">
-                    <span class="live-dot"></span> LIVE
-                </div>
             </div>
 
             <div id="authSection" class="flex items-center gap-3"></div>
