@@ -473,7 +473,7 @@ def create_tournament():
 def view_tournament(t_id):
     t = get_tournament(t_id)
     if not t:
-        return "Not found", 404
+        return redirect("/")
     schedule = sorted(
         [m for m in t["matches"] if m["number"] and m["time"]],
         key=lambda x: (x["timestamp"], x["court"]),
@@ -611,7 +611,7 @@ def handle_exception(e):
         if isinstance(e, HTTPException):
             return jsonify({"error": e.description}), e.code
         return jsonify({"error": str(e)}), 500
-    return e
+    return redirect("/")
 
 
 if __name__ == "__main__":
