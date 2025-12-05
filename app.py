@@ -1,20 +1,21 @@
+import json
 import math
 import os
-from pathlib import Path
-import uuid
-import json
-import sqlite3
 import secrets
+import sqlite3
+import uuid
 from datetime import datetime, timedelta
+from pathlib import Path
+
 from flask import (
     Flask,
+    g,
+    jsonify,
+    redirect,
     render_template,
     request,
-    jsonify,
     session,
-    redirect,
     url_for,
-    g,
 )
 from werkzeug.security import check_password_hash, generate_password_hash
 
@@ -129,7 +130,6 @@ def generate_structure(teams, type="double"):
         matches.append(m)
         return m
 
-    # WB
     wb_rounds = power
     wb_matches = {r: [] for r in range(1, wb_rounds + 1)}
     for r in range(1, wb_rounds + 1):
@@ -151,7 +151,6 @@ def generate_structure(teams, type="double"):
         m["p1"] = seeded_teams[i * 2]
         m["p2"] = seeded_teams[i * 2 + 1]
 
-    # LB
     if type == "double" and size >= 4:
         lb_rounds = (wb_rounds - 1) * 2
         lb_matches = {r: [] for r in range(1, lb_rounds + 1)}
@@ -220,8 +219,6 @@ def generate_structure(teams, type="double"):
 
 def refresh_bracket(t_data):
     matches = {m["id"]: m for m in t_data["matches"]}
-
-    # Multiple passes to ensure full propagation
     for _ in range(20):
         for m in t_data["matches"]:
 
@@ -238,14 +235,11 @@ def refresh_bracket(t_data):
                         return src["p1"] if src["winner"] == src["p2"] else src["p2"]
                 return None
 
-            # Always try to update player if source exists
             if m["source_p1"]:
                 m["p1"] = resolve_source(m["source_p1"], m["source_p1_type"])
             if m["source_p2"]:
                 m["p2"] = resolve_source(m["source_p2"], m["source_p2_type"])
 
-            # --- RESET LOGIC ---
-            # If match is Finished but invalid state detected, wipe it.
             if m["status"] == "Finished" and m["winner"] != "BYE":
                 should_reset = False
 
@@ -264,7 +258,6 @@ def refresh_bracket(t_data):
                     m["p1_sets"] = 0
                     m["p2_sets"] = 0
 
-            # Auto-resolve BYEs
             if not m["winner"]:
                 is_ghost = False
                 if m["p1"] == "BYE" or m["p2"] == "BYE":
@@ -453,7 +446,7 @@ def get_tournament_json(t_id):
 @app.route("/create", methods=["POST"])
 def create_tournament():
     if not session.get("is_admin"):
-        return "Unauthorized", 403
+        return jsonify({"error": "Unauthorized"}), 403
     teams = [t.strip() for t in request.form.get("teams", "").split("\n") if t.strip()]
     courts = [c.strip() for c in request.form.get("courts", "").split(",") if c.strip()]
     t_id = str(uuid.uuid4())[:8]
@@ -491,10 +484,15 @@ def view_tournament(t_id):
 def report_score(t_id):
     t = get_tournament(t_id)
     if not t:
-        return jsonify({"status": "error"})
+        return jsonify({"error": "Tournament not found"}), 404
+
     data = request.json
-    if data.get("code") != t["code"] and not session.get("is_admin"):
-        return jsonify({"error": "Invalid Code"}), 403
+    if not data:
+        return jsonify({"error": "Invalid JSON"}), 400
+
+    # Fix: Safely get code from tournament object
+    if data.get("code") != t.get("code") and not session.get("is_admin"):
+        return jsonify({"error": "Invalid Tournament Code"}), 403
 
     m_id = data["id"]
     match = next((m for m in t["matches"] if m["id"] == m_id), None)
@@ -549,7 +547,7 @@ def settings(t_id):
     t = get_tournament(t_id)
     data = request.json
     if not t:
-        return jsonify({"status": "error"})
+        return jsonify({"error": "Tournament not found"}), 404
     if data.get("recalculate"):
         update_schedule(t)
         save_tournament(t_id, t)
@@ -562,11 +560,9 @@ def settings(t_id):
         t["courts"] = [c.strip() for c in data["courts"].split(",") if c.strip()]
         should_reschedule = True
 
-    # NEW: Handle Time Settings
     if "start_time" in data:
         t["start_time"] = data["start_time"]
         should_reschedule = True
-
     if "match_duration" in data:
         t["match_duration"] = int(data["match_duration"])
         should_reschedule = True
@@ -582,7 +578,6 @@ def settings(t_id):
 
     if should_reschedule:
         update_schedule(t)
-
     save_tournament(t_id, t)
     return jsonify({"status": "ok"})
 
@@ -596,4 +591,6 @@ def delete_tournament(t_id):
 
 
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=8080)
+    debug_mode = os.getenv("FLASK_DEBUG", "False").lower() in ["true", "1", "t"]
+    port = int(os.getenv("PORT", 8080))
+    app.run(debug=debug_mode, host="0.0.0.0", port=port)
