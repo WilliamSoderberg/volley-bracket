@@ -1,0 +1,17 @@
+{
+  "name": "volley-bracket",
+  "version": "2.0.0",
+  "description": "VolleyManager",
+  "main": "app.py",
+  "scripts": {
+    "dev": "tailwindcss -i ./static/src/input.css -o ./static/dist/output.css --watch",
+    "build": "tailwindcss -i ./static/src/input.css -o ./static/dist/output.css --minify"
+  },
+  "keywords": [],
+  "author": "William Söderberg",
+  "license": "ISC",
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.1.17",
+    "tailwindcss": "^4.1.17"
+  }
+}

@@ -6,8 +6,18 @@
     <meta name="viewport"
         content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
     <title>{{ t.name }} - Bracket</title>
-    <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.svg') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='src/main.css') }}">
+
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='dist/output.css') }}">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script>
+        // Check local storage or system preference on load
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    </script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <style>
         ::-webkit-scrollbar {
@@ -16,12 +26,22 @@
         }
 
         ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+
+        /* Light track */
+        .dark ::-webkit-scrollbar-track {
             background: #0f172a;
         }
 
+        /* Dark track */
         ::-webkit-scrollbar-thumb {
-            background: #334155;
+            background: #cbd5e1;
             border-radius: 4px;
+        }
+
+        .dark ::-webkit-scrollbar-thumb {
+            background: #334155;
         }
 
         .bracket-wrapper {
@@ -68,12 +88,20 @@
             z-index: 0;
         }
 
+        /* Dynamic Stroke Color for Lines */
         path {
             fill: none;
-            stroke: #475569;
+            stroke: #94a3b8;
             stroke-width: 2;
             opacity: 0.5;
         }
+
+        /* Light mode stroke */
+        .dark path {
+            stroke: #475569;
+        }
+
+        /* Dark mode stroke */
 
         .match-card {
             transition: all 0.2s;
@@ -86,105 +114,69 @@
         .invisible-card {
             display: none;
         }
-
-        /* Fix iOS Notch jumping when modal opens */
-        html:has(dialog[open]) {
-            overflow: hidden;
-            /* Prevent background scrolling */
-            height: 100vh;
-            height: -webkit-fill-available;
-        }
-
-        /* Force body to stay pinned to top */
-        body:has(dialog[open]) {
-            position: fixed;
-            width: 100%;
-            top: 0;
-            left: 0;
-            /* Retain safe area padding */
-            padding-top: env(safe-area-inset-top) !important;
-        }
-
-        dialog {
-            /* Ensure the modal itself never overlaps the notch or home bar */
-            margin-top: auto;
-            margin-bottom: auto;
-            max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 2rem);
-
-            /* Fix for iOS keyboard pushing things off screen */
-            position: fixed;
-            inset: 0;
-            z-index: 100;
-        }
-
-        /* Ensure the backdrop respects the safe area if needed, 
-        though usually full screen is preferred for backdrop */
-        dialog::backdrop {
-            background: rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(4px);
-            -webkit-backdrop-filter: blur(4px);
-        }
-
-        @media (max-width: 768px) {
-            main {
-                padding-bottom: 3.5rem;
-            }
-        }
     </style>
 </head>
 
-<body class="bg-slate-950 text-slate-100 font-sans h-screen flex flex-col overflow-hidden">
+<body
+    class="bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 font-sans h-screen flex flex-col overflow-hidden transition-colors duration-200">
 
     <nav
-        class="pt-[calc(0.75rem+env(safe-area-inset-top))] bg-slate-900 border-b border-slate-800 p-3 shadow-md z-50 shrink-0">
+        class="pt-[calc(0.75rem+env(safe-area-inset-top))] bg-white dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-800 p-3 shadow-sm dark:shadow-md z-50 shrink-0 transition-colors duration-200">
         <div class="flex justify-between items-center h-10 max-w-7xl mx-auto w-full">
-            <a href="/"
-                class="flex items-center justify-center text-slate-400 hover:text-orange-500 transition p-2 -ml-2"><i
-                    class="ph ph-house text-xl"></i></a>
-
-            <!-- Center: Title + Live Indicator -->
-            <div class="text-center absolute left-1/2 -translate-x-1/2 flex flex-col items-center">
-                <h1 class="text-base font-bold text-white truncate max-w-[200px]" id="navTitle">{{ t.name }}</h1>
+            <div class="flex items-center">
+                <a href="/"
+                    class="flex items-center justify-center p-2 rounded-full hover:bg-zinc-200 dark:hover:bg-zinc-800 transition text-zinc-600 dark:text-zinc-400">
+                    <i class="ph ph-house text-xl"></i></a>
             </div>
 
-            <div id="authSection" class="flex items-center gap-3"></div>
+            <div class="text-center absolute left-1/2 -translate-x-1/2">
+                <h1 class="text-base font-bold text-zinc-800 dark:text-white truncate max-w-[150px] md:max-w-xs"
+                    id="navTitle">{{ t.name }}</h1>
+            </div>
+            <div class="flex items-center gap-4">
+                <button onclick="toggleTheme()"
+                    class="flex items-center justify-center p-2 rounded-full hover:bg-zinc-200 dark:hover:bg-zinc-800 transition text-zinc-600 dark:text-zinc-400">
+                    <i id="themeIcon" class="ph ph-moon text-xl"></i>
+                </button>
+                <div id="authSection" class="flex items-center gap-3"></div>
+            </div>
         </div>
         <div class="hidden md:flex justify-center mt-2">
-            <div class="flex bg-slate-950 rounded p-1 border border-slate-800">
+            <div class="flex bg-zinc-100 dark:bg-zinc-950 rounded p-1 border border-gray-200 dark:border-zinc-800">
                 <button onclick="setView('bracket')" id="btn-bracket-d"
-                    class="px-6 py-1.5 rounded text-sm font-medium transition bg-slate-800 text-white shadow-sm">Bracket</button>
+                    class="px-6 py-1.5 rounded text-sm font-medium transition bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm border border-gray-200 dark:border-transparent">Bracket</button>
                 <button onclick="setView('schedule')" id="btn-schedule-d"
-                    class="px-6 py-1.5 rounded text-sm font-medium transition text-slate-400 hover:text-white">Schedule</button>
+                    class="px-6 py-1.5 rounded text-sm font-medium transition text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white">Schedule</button>
             </div>
         </div>
     </nav>
 
-    <main class="flex-1 overflow-hidden relative bg-slate-950">
+    <main class="flex-1 overflow-hidden relative bg-zinc-50 dark:bg-zinc-950 transition-colors duration-200">
         <div id="view-bracket"
-            class="w-full h-full overflow-auto bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:20px_20px] pt-8 pb-20">
+            class="w-full h-full overflow-auto bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] dark:bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:20px_20px] pt-8 pb-20">
             <div class="bracket-wrapper" id="bracketRoot"><svg id="connections"></svg></div>
         </div>
         <div id="view-schedule" class="hidden w-full h-full overflow-auto p-4 md:p-8">
             <div class="max-w-3xl mx-auto space-y-4 pb-20">
                 <div class="relative group">
                     <input type="text" id="scheduleFilter" onkeyup="filterSchedule()" placeholder="Search teams..."
-                        class="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 pl-10 text-white focus:ring-1 focus:ring-orange-500 outline-none transition placeholder-slate-600">
+                        class="w-full bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-3 pl-10 text-zinc-900 dark:text-white focus:ring-1 focus:ring-orange-500 outline-none transition placeholder-zinc-400 dark:placeholder-zinc-600">
                     <i
-                        class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-lg group-hover:text-orange-500 transition"></i>
+                        class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 dark:text-zinc-500 text-lg group-hover:text-orange-500 transition"></i>
                 </div>
                 <div
-                    class="bg-transparent md:bg-slate-900 md:rounded-xl md:shadow-xl md:overflow-hidden md:border md:border-slate-800">
+                    class="bg-transparent md:bg-white md:dark:bg-zinc-900 md:rounded-xl md:shadow-sm md:overflow-hidden md:border md:border-gray-200 md:dark:border-zinc-800 transition-colors">
                     <div class="hidden md:block">
                         <table class="w-full text-left">
                             <thead
-                                class="bg-slate-950/50 text-slate-500 text-xs uppercase font-bold tracking-wider border-b border-slate-800">
+                                class="bg-zinc-50 dark:bg-zinc-950/50 text-zinc-500 text-xs uppercase font-bold tracking-wider border-b border-gray-200 dark:border-zinc-800">
                                 <tr>
                                     <th class="p-4">Time / Court</th>
                                     <th class="p-4">Match</th>
                                     <th class="p-4 text-right">Result</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-slate-800" id="tableBody"></tbody>
+                            <tbody class="divide-y divide-gray-100 dark:divide-zinc-800" id="tableBody"></tbody>
                         </table>
                     </div>
                     <div id="mobileScheduleList" class="md:hidden space-y-3"></div>
@@ -193,62 +185,65 @@
         </div>
     </main>
 
-    <!-- Mobile Bottom Navigation (Pure Tailwind - Fixed 'hidden' issue) -->
     <div
-        class="fixed bottom-0 left-0 w-full z-50 bg-slate-900 border-t border-slate-800 flex h-14 pb-[env(safe-area-inset-bottom)] md:hidden">
+        class="fixed bottom-0 left-0 w-full z-50 bg-white dark:bg-zinc-900 border-t border-gray-200 dark:border-zinc-800 flex h-14 pb-[env(safe-area-inset-bottom)] md:hidden transition-colors duration-200">
         <button onclick="setView('bracket')" id="btn-bracket-m"
-            class="flex-1 flex flex-col items-center justify-center text-slate-500 hover:text-orange-400 text-[0.7rem] font-bold uppercase tracking-wider transition-all duration-200 active">
+            class="flex-1 flex flex-col items-center justify-center text-orange-500 hover:text-orange-600 dark:hover:text-orange-400 text-[0.7rem] font-bold uppercase tracking-wider transition-all duration-200 active">
             <i class="ph ph-tree-structure text-xl mb-0.5"></i> Bracket
         </button>
         <button onclick="setView('schedule')" id="btn-schedule-m"
-            class="flex-1 flex flex-col items-center justify-center text-slate-500 hover:text-orange-400 text-[0.7rem] font-bold uppercase tracking-wider transition-all duration-200">
+            class="flex-1 flex flex-col items-center justify-center text-zinc-400 dark:text-zinc-500 hover:text-orange-500 dark:hover:text-orange-400 text-[0.7rem] font-bold uppercase tracking-wider transition-all duration-200">
             <i class="ph ph-calendar-blank text-xl mb-0.5"></i> Schedule
         </button>
     </div>
 
     <!-- Modals -->
     <dialog id="scoreModal"
-        class="bg-slate-900 text-white rounded-xl shadow-2xl backdrop:bg-black/60 backdrop:backdrop-blur-sm p-0 w-full max-w-md border border-slate-700 m-auto">
+        class="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white rounded-xl shadow-2xl backdrop:bg-black/20 dark:backdrop:bg-black/90 p-0 w-full max-w-md border border-gray-200 dark:border-zinc-700 m-auto transition-colors">
         <div class="p-6">
             <div class="flex justify-between items-center mb-6">
                 <h3 class="font-bold text-xl flex items-center gap-2"><i class="ph ph-trophy text-orange-500"></i> Match
                     #<span id="modalMatchIdDisp"></span></h3>
-                <form method="dialog"><button class="text-slate-400 hover:text-white transition"><i
+                <form method="dialog"><button
+                        class="text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition"><i
                             class="ph ph-x text-xl"></i></button></form>
             </div>
 
             <div
-                class="flex justify-center items-center gap-4 mb-6 bg-slate-950 p-3 rounded-lg border border-slate-800">
-                <div class="flex items-center gap-2 text-sm font-mono text-slate-300"><i
+                class="flex justify-center items-center gap-4 mb-6 bg-zinc-50 dark:bg-zinc-950 p-3 rounded-lg border border-gray-200 dark:border-zinc-800">
+                <div class="flex items-center gap-2 text-sm font-mono text-zinc-600 dark:text-zinc-300"><i
                         class="ph ph-clock text-orange-500"></i> <span id="modalTimeDisplay">--:--</span></div>
-                <div class="h-4 w-px bg-slate-800"></div>
-                <div class="flex items-center gap-2 text-sm font-bold text-white"><i
+                <div class="h-4 w-px bg-zinc-300 dark:bg-zinc-800"></div>
+                <div class="flex items-center gap-2 text-sm font-bold text-zinc-900 dark:text-white"><i
                         class="ph ph-court-basketball text-orange-500"></i> <span id="modalCourtDisplay">TBD</span>
                 </div>
             </div>
 
             <div id="scoreError"
-                class="hidden text-xs text-red-400 text-center mb-4 bg-red-900/10 p-2 rounded border border-red-900/30">
+                class="hidden text-xs text-red-500 dark:text-red-400 text-center mb-4 bg-red-50 dark:bg-red-900/10 p-2 rounded border border-red-200 dark:border-red-900/30">
             </div>
-            <div id="refAuthSection" class="mb-6 bg-slate-950 p-4 rounded-lg border border-slate-800"><label
-                    class="block text-xs font-bold text-orange-500 uppercase mb-2">Tournament Code</label><input
+            <div id="refAuthSection"
+                class="mb-6 bg-zinc-50 dark:bg-zinc-950 p-4 rounded-lg border border-gray-200 dark:border-zinc-800">
+                <label class="block text-xs font-bold text-orange-500 uppercase mb-2">Tournament Code</label><input
                     type="password" id="scoreCode"
-                    class="w-full bg-slate-900 border border-slate-700 rounded p-3 text-center text-lg tracking-[0.5em] focus:ring-1 focus:ring-orange-500 outline-none transition text-white"
-                    placeholder="••••" autocomplete="off"></div>
-            <div class="grid grid-cols-3 gap-2 text-center font-bold text-slate-200 mb-4 items-center">
+                    class="w-full bg-white dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded p-3 text-center text-lg tracking-[0.5em] focus:ring-1 focus:ring-orange-500 outline-none transition text-zinc-900 dark:text-white"
+                    placeholder="•••••" autocomplete="off">
+            </div>
+            <div
+                class="grid grid-cols-3 gap-2 text-center font-bold text-zinc-700 dark:text-zinc-200 mb-4 items-center">
                 <div id="mP1" class="break-words text-sm leading-tight"></div>
                 <div
-                    class="text-slate-600 text-[10px] font-bold uppercase bg-slate-950 px-2 py-1 rounded-full w-fit mx-auto">
+                    class="text-zinc-400 dark:text-zinc-600 text-[10px] font-bold uppercase bg-zinc-100 dark:bg-zinc-950 px-2 py-1 rounded-full w-fit mx-auto">
                     VS</div>
                 <div id="mP2" class="break-words text-sm leading-tight"></div>
             </div>
             <div id="setsContainer" class="space-y-2 mb-6 max-h-48 overflow-y-auto pr-1"></div>
             <button onclick="addSet()"
-                class="w-full py-2 border border-dashed border-slate-700 text-slate-400 text-sm mb-4 hover:border-orange-500 hover:text-orange-500 transition rounded">+
+                class="w-full py-2 border border-dashed border-zinc-300 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 text-sm mb-4 hover:border-orange-500 hover:text-orange-500 transition rounded">+
                 Add Set</button>
             <div class="flex gap-2">
                 <button id="clearBtn" onclick="clearScore()"
-                    class="hidden w-1/3 bg-red-900/50 hover:bg-red-900 text-red-300 py-3 rounded-lg font-bold transition text-sm">Clear</button>
+                    class="hidden w-1/3 bg-red-100 dark:bg-red-900/50 hover:bg-red-200 dark:hover:bg-red-900 text-red-600 dark:text-red-300 py-3 rounded-lg font-bold transition text-sm">Clear</button>
                 <button id="submitBtn" onclick="submitScore()"
                     class="w-full bg-orange-600 hover:bg-orange-500 py-3 rounded-lg font-bold shadow-lg shadow-orange-900/20 transition text-white">Submit
                     Result</button>
@@ -257,71 +252,75 @@
     </dialog>
 
     <dialog id="settingsModal"
-        class="bg-slate-900 text-white rounded-xl shadow-2xl backdrop:bg-black/90 p-0 w-full max-w-lg border border-slate-700 m-auto">
+        class="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white rounded-xl shadow-2xl backdrop:bg-black/20 dark:backdrop:bg-black/90 p-0 w-full max-w-lg border border-gray-200 dark:border-zinc-700 m-auto">
         <div class="p-6">
             <div class="flex justify-between items-center mb-6">
                 <h2 class="text-xl font-bold flex items-center gap-2"><i class="ph ph-sliders text-orange-500"></i>
                     Settings</h2>
-                <form method="dialog"><button class="text-slate-400 hover:text-white"><i
+                <form method="dialog"><button class="text-zinc-400 hover:text-zinc-900 dark:hover:text-white"><i
                             class="ph ph-x text-xl"></i></button></form>
             </div>
             <div id="settingsError"
-                class="hidden text-xs text-red-400 text-center mb-4 bg-red-900/10 p-2 rounded border border-red-900/30">
+                class="hidden text-xs text-red-500 dark:text-red-400 text-center mb-4 bg-red-50 dark:bg-red-900/10 p-2 rounded border border-red-200 dark:border-red-900/30">
             </div>
             <div class="space-y-4">
-                <div><label class="text-xs font-bold text-slate-500 uppercase">Name</label><input type="text"
+                <div><label class="text-xs font-bold text-zinc-500 uppercase">Name</label><input type="text"
                         id="settingName"
-                        class="w-full bg-slate-950 border border-slate-800 rounded p-3 focus:border-orange-500 outline-none transition">
+                        class="w-full bg-zinc-50 dark:bg-zinc-950 border border-gray-300 dark:border-zinc-800 rounded p-3 focus:border-orange-500 outline-none transition text-zinc-900 dark:text-white">
                 </div>
+                <!-- ADDED: Time and Duration Inputs -->
                 <div class="grid grid-cols-2 gap-4">
-                    <div><label class="text-xs font-bold text-slate-500 uppercase">Start Time</label><input type="time"
+                    <div><label class="text-xs font-bold text-zinc-500 uppercase">Start Time</label><input type="time"
                             id="settingStartTime"
-                            class="w-full bg-slate-950 border border-slate-800 rounded p-3 focus:border-orange-500 outline-none transition">
+                            class="w-full bg-zinc-50 dark:bg-zinc-950 border border-gray-300 dark:border-zinc-800 rounded p-3 focus:border-orange-500 outline-none transition text-zinc-900 dark:text-white">
                     </div>
-                    <div><label class="text-xs font-bold text-slate-500 uppercase">Match Duration (mins)</label><input
+                    <div><label class="text-xs font-bold text-zinc-500 uppercase">Duration (mins)</label><input
                             type="number" id="settingDuration"
-                            class="w-full bg-slate-950 border border-slate-800 rounded p-3 focus:border-orange-500 outline-none transition">
+                            class="w-full bg-zinc-50 dark:bg-zinc-950 border border-gray-300 dark:border-zinc-800 rounded p-3 focus:border-orange-500 outline-none transition text-zinc-900 dark:text-white">
                     </div>
                 </div>
-                <div><label class="text-xs font-bold text-slate-500 uppercase">Courts</label><input type="text"
+                <div><label class="text-xs font-bold text-zinc-500 uppercase">Courts</label><input type="text"
                         id="settingCourts"
-                        class="w-full bg-slate-950 border border-slate-800 rounded p-3 focus:border-orange-500 outline-none transition">
+                        class="w-full bg-zinc-50 dark:bg-zinc-950 border border-gray-300 dark:border-zinc-800 rounded p-3 focus:border-orange-500 outline-none transition text-zinc-900 dark:text-white">
                 </div>
-                <div class="pt-4 border-t border-slate-800"><button onclick="recalculateSchedule()"
+                <div class="pt-4 border-t border-gray-200 dark:border-zinc-800"><button onclick="recalculateSchedule()"
                         class="w-full bg-blue-600 hover:bg-blue-500 py-2.5 rounded-lg font-bold flex items-center justify-center gap-2 transition text-sm text-white"><i
                             class="ph ph-arrows-clockwise"></i> Recalculate Schedule</button></div>
-                <div class="pt-4 border-t border-slate-800"><label
-                        class="block text-xs font-bold text-red-400 uppercase mb-2">Update Teams (Resets
-                        Bracket!)</label><textarea id="settingTeams"
-                        class="w-full h-24 bg-slate-950 border border-red-900/30 rounded p-3 text-sm font-mono focus:border-red-500 outline-none transition"></textarea>
+                <div class="pt-4 border-t border-gray-200 dark:border-zinc-800"><label
+                        class="block text-xs font-bold text-red-500 dark:text-red-400 uppercase mb-2">Update Teams
+                        (Resets Bracket!)</label><textarea id="settingTeams"
+                        class="w-full h-24 bg-zinc-50 dark:bg-zinc-950 border border-red-200 dark:border-red-900/30 rounded p-3 text-sm font-mono focus:border-red-500 outline-none transition text-zinc-900 dark:text-white"></textarea>
                 </div>
             </div>
-            <div class="flex justify-between mt-6 pt-6 border-t border-slate-800"><button onclick="deleteTournament()"
-                    class="text-red-500 text-sm hover:underline">Delete Tournament</button><button
-                    onclick="saveSettings()"
+            <div class="flex justify-between mt-6 pt-6 border-t border-gray-200 dark:border-zinc-800"><button
+                    onclick="deleteTournament()" class="text-red-500 text-sm hover:underline">Delete
+                    Tournament</button><button onclick="saveSettings()"
                     class="bg-orange-600 hover:bg-orange-500 px-6 py-2 rounded-lg font-bold transition text-white">Save
                     Changes</button></div>
         </div>
     </dialog>
 
     <dialog id="loginModal"
-        class="bg-slate-900 text-white rounded-xl shadow-2xl backdrop:bg-black/60 backdrop:backdrop-blur-sm p-0 w-80 border border-slate-700 m-auto">
+        class="bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white rounded-xl shadow-2xl backdrop:bg-black/60 p-0 w-80 m-auto border border-gray-200 dark:border-zinc-700">
         <div class="p-6">
-            <div class="flex justify-center mb-4">
-                <div class="bg-slate-800 p-3 rounded-full"><i class="ph ph-lock-key text-2xl text-orange-500"></i></div>
+            <div class="flex justify-center">
+                <div class="flex justify-between items-center bg-zinc-100 dark:bg-zinc-800 p-2 rounded-full"><i
+                        class="ph ph-lock-key text-2xl text-orange-500"></i></div>
             </div>
             <h2 class="text-lg font-bold mb-4 text-center">Admin Login</h2>
-            <div id="loginError"
-                class="hidden text-xs text-red-400 text-center mb-3 bg-red-900/10 p-2 rounded border border-red-900/30">
-                Invalid Credentials</div><input id="loginUser"
-                class="w-full bg-slate-950 border border-slate-800 rounded p-3 mb-3 focus:border-orange-500 outline-none transition"
-                placeholder="Username"><input type="password" id="loginPass"
-                class="w-full bg-slate-950 border border-slate-800 rounded p-3 mb-6 focus:border-orange-500 outline-none transition"
-                placeholder="Password">
+            <div id="loginError" class="hidden text-xs text-red-500 text-center mb-3">Invalid Credentials</div>
+            <input id="loginUser"
+                class="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-300 dark:border-zinc-600 rounded p-3 mb-3 focus:border-orange-500 outline-none transition"
+                placeholder="Username" onkeydown="if(event.key==='Enter') performLogin()">
+            <input type="password" id="loginPass"
+                class="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-300 dark:border-zinc-600 rounded p-3 mb-6 focus:border-orange-500 outline-none transition"
+                placeholder="Password" onkeydown="if(event.key==='Enter') performLogin()">
             <div class="flex justify-between items-center">
-                <form method="dialog"><button class="text-slate-400 text-sm hover:text-white">Cancel</button></form>
+                <form method="dialog"><button
+                        class="px-3 py-1 text-zinc-400 text-sm hover:text-zinc-600 dark:hover:text-white">Cancel</button>
+                </form>
                 <button onclick="performLogin()"
-                    class="bg-orange-600 hover:bg-orange-500 px-6 py-2 rounded font-bold transition text-white">Login</button>
+                    class="bg-orange-600 hover:bg-orange-500 text-white px-4 py-1 rounded font-bold">Login</button>
             </div>
         </div>
     </dialog>
@@ -330,59 +329,43 @@
         const TOURNAMENT = {{ t| tojson }}; let SCHEDULE_DATA = {{ schedule| tojson }}; let activeMatchId = null; let isAdmin = false; const T_ID = "{{ t.id }}";
         const COURT_COLORS = ['#ea580c', '#0284c7', '#059669', '#ca8a04', '#dc2626', '#0891b2', '#e11d48', '#65a30d'];
         function stringToColor(str) { let hash = 0; for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash); return COURT_COLORS[Math.abs(hash) % COURT_COLORS.length]; }
-
         let lastDataString = "";
+
+        // TOGGLE THEME
+        function toggleTheme() {
+            const html = document.documentElement;
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark'); localStorage.theme = 'light';
+                document.getElementById('themeIcon').className = 'ph ph-sun text-xl';
+            } else {
+                html.classList.add('dark'); localStorage.theme = 'dark';
+                document.getElementById('themeIcon').className = 'ph ph-moon text-xl';
+            }
+        }
+        document.getElementById('themeIcon').className = document.documentElement.classList.contains('dark') ? 'ph ph-moon text-xl' : 'ph ph-sun text-xl';
 
         async function fetchTournamentData() {
             try {
-                // Polling Safety: Don't refresh if user is interacting with modals
                 if (document.getElementById('scoreModal').open || document.getElementById('settingsModal').open || document.getElementById('loginModal').open) return;
-
-                const res = await fetch(`/api/t/${T_ID}`);
-                const data = await res.json();
-
-                // Smart Refresh: Only update DOM if data changed
+                const res = await fetch(`/api/t/${T_ID}`); const data = await res.json();
                 const currentDataString = JSON.stringify(data);
                 if (currentDataString === lastDataString) return;
                 lastDataString = currentDataString;
-
-                TOURNAMENT.matches = data.tournament.matches;
-                TOURNAMENT.name = data.tournament.name;
-                TOURNAMENT.courts = data.tournament.courts;
-                TOURNAMENT.teams = data.tournament.teams;
-                TOURNAMENT.start_time = data.tournament.start_time;
-                TOURNAMENT.match_duration = data.tournament.match_duration;
-                SCHEDULE_DATA = data.schedule;
-
+                TOURNAMENT.matches = data.tournament.matches; TOURNAMENT.name = data.tournament.name; TOURNAMENT.courts = data.tournament.courts; TOURNAMENT.teams = data.tournament.teams; TOURNAMENT.start_time = data.tournament.start_time; TOURNAMENT.match_duration = data.tournament.match_duration; SCHEDULE_DATA = data.schedule;
                 document.getElementById('navTitle').innerText = TOURNAMENT.name;
-
-                // Preserve scroll position
-                const bracketScrollX = document.getElementById('view-bracket').scrollLeft;
-                const bracketScrollY = document.getElementById('view-bracket').scrollTop;
-
-                renderBracket();
-                renderScheduleTable();
-
-                document.getElementById('view-bracket').scrollLeft = bracketScrollX;
-                document.getElementById('view-bracket').scrollTop = bracketScrollY;
-
+                const sx = document.getElementById('view-bracket').scrollLeft, sy = document.getElementById('view-bracket').scrollTop;
+                renderBracket(); renderScheduleTable();
+                document.getElementById('view-bracket').scrollLeft = sx; document.getElementById('view-bracket').scrollTop = sy;
                 if (!document.getElementById('view-bracket').classList.contains('hidden')) setTimeout(drawConnections, 50);
             } catch (e) { console.error("Poll failed", e); }
         }
-
-        // POLLING LOOP (Every 5 seconds)
         setInterval(fetchTournamentData, 5000);
 
         async function checkAuth() { isAdmin = (await (await fetch('/api/check-auth')).json()).is_admin; renderAuthUI(); }
         function renderAuthUI() {
             const c = document.getElementById('authSection');
-            if (isAdmin) {
-                c.innerHTML = `<button onclick="openSettings()" class="flex items-center justify-center text-slate-400 hover:text-white transition p-1"><i class="ph ph-gear text-xl"></i></button><button onclick="logout()" class="flex items-center justify-center text-slate-400 hover:text-white transition p-1 ml-1"><i class="ph ph-sign-out text-xl"></i></button>`;
-                document.getElementById('refAuthSection').classList.add('hidden');
-            } else {
-                c.innerHTML = `<button onclick="document.getElementById('loginModal').showModal()" class="flex items-center justify-center text-slate-400 hover:text-orange-500 transition p-1" title="Login"><i class="ph ph-lock-key text-2xl"></i></button>`;
-                document.getElementById('refAuthSection').classList.remove('hidden');
-            }
+            if (isAdmin) { c.innerHTML = `<button onclick="openSettings()" class="flex items-center justify-center p-2 rounded-full hover:bg-zinc-200 dark:hover:bg-zinc-800 transition text-zinc-600 dark:text-zinc-400"><i class="ph ph-gear text-xl"></i></button><button onclick="logout()" class="flex items-center justify-center p-2 rounded-full hover:bg-zinc-200 dark:hover:bg-zinc-800 transition text-zinc-600 dark:text-zinc-400"><i class="ph ph-sign-out text-xl"></i></button>`; document.getElementById('refAuthSection').classList.add('hidden'); }
+            else { c.innerHTML = `<button onclick="document.getElementById('loginModal').showModal()" class="flex items-center justify-center p-2 rounded-full hover:bg-zinc-200 dark:hover:bg-zinc-800 transition text-zinc-600 dark:text-zinc-400"><i class="ph ph-lock-key text-xl"></i></button>`; document.getElementById('refAuthSection').classList.remove('hidden'); }
         }
         async function performLogin() { if ((await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: document.getElementById('loginUser').value, password: document.getElementById('loginPass').value }) })).ok) location.reload(); else document.getElementById('loginError').classList.remove('hidden'); }
         async function logout() { await fetch('/api/logout', { method: 'POST' }); location.reload(); }
@@ -391,22 +374,16 @@
             const tb = document.getElementById('tableBody'), ml = document.getElementById('mobileScheduleList'); let hT = '', hM = '';
             SCHEDULE_DATA.forEach(m => {
                 const color = stringToColor(m.court + 'salt');
-                const p1 = m.p1 || `<span class="text-sm italic text-slate-500">${m.p1_label}</span>`;
-                const p2 = m.p2 || `<span class="text-sm italic text-slate-500">${m.p2_label}</span>`;
-                hT += `<tr class="schedule-row hover:bg-slate-900 transition border-b border-slate-800"><td class="p-4"><div class="text-lg font-bold text-white font-mono">${m.time}</div><div class="text-[10px] font-bold px-2 py-0.5 rounded w-fit mt-1 text-white uppercase tracking-wider" style="background:${color}">${m.court}</div></td><td class="p-4"><div class="font-medium text-slate-200 team-names text-base">${p1} <span class="text-slate-600 text-sm mx-1">vs</span> ${p2}</div><div class="text-xs text-slate-500 mt-1 uppercase tracking-wide">Match #${m.number} • ${m.bracket} R${m.round}</div></td><td class="p-4 text-right">${getButtonHtml(m)}</td></tr>`;
-                hM += `<div class="schedule-row bg-slate-900 p-4 rounded-xl border border-slate-800 shadow-sm"><div class="flex justify-between items-start mb-3"><div><div class="text-xl font-bold text-white font-mono">${m.time}</div><div class="text-[10px] font-bold px-2 py-0.5 rounded w-fit mt-1 text-white uppercase tracking-wider" style="background:${color}">${m.court}</div></div><div>${getButtonHtml(m)}</div></div><div class="font-medium text-base text-slate-200 team-names mb-1">${p1} <br><span class="text-slate-600 text-xs font-bold uppercase">vs</span><br> ${p2}</div><div class="text-[10px] text-slate-500 uppercase tracking-wider font-bold mt-2">Match #${m.number} • ${m.bracket} R${m.round}</div></div>`;
+                const p1 = m.p1 || `<span class="text-sm italic text-zinc-400 dark:text-zinc-500">${m.p1_label}</span>`, p2 = m.p2 || `<span class="text-sm italic text-zinc-400 dark:text-zinc-500">${m.p2_label}</span>`;
+                hT += `<tr class="schedule-row hover:bg-gray-50 dark:hover:bg-zinc-900 transition border-b border-gray-100 dark:border-zinc-800"><td class="p-4"><div class="text-lg font-bold text-zinc-800 dark:text-white font-mono">${m.time}</div><div class="text-[10px] font-bold px-2 py-0.5 rounded w-fit mt-1 text-white uppercase tracking-wider" style="background:${color}">${m.court}</div></td><td class="p-4"><div class="font-medium text-zinc-800 dark:text-zinc-200 team-names text-base">${p1} <span class="text-zinc-400 dark:text-zinc-600 text-sm mx-1">vs</span> ${p2}</div><div class="text-xs text-zinc-400 dark:text-zinc-500 mt-1 uppercase tracking-wide">Match #${m.number} • ${m.bracket} R${m.round}</div></td><td class="p-4 text-right">${getButtonHtml(m)}</td></tr>`;
+                hM += `<div class="schedule-row bg-white dark:bg-zinc-900 p-4 rounded-xl border border-gray-200 dark:border-zinc-800 shadow-sm"><div class="flex justify-between items-start mb-3"><div><div class="text-xl font-bold text-zinc-800 dark:text-white font-mono">${m.time}</div><div class="text-[10px] font-bold px-2 py-0.5 rounded w-fit mt-1 text-white uppercase tracking-wider" style="background:${color}">${m.court}</div></div><div>${getButtonHtml(m)}</div></div><div class="font-medium text-base text-zinc-800 dark:text-zinc-200 team-names mb-1">${p1} <br><span class="text-zinc-400 dark:text-zinc-600 text-xs font-bold uppercase">vs</span><br> ${p2}</div><div class="text-[10px] text-zinc-400 dark:text-zinc-500 uppercase tracking-wider font-bold mt-2">Match #${m.number} • ${m.bracket} R${m.round}</div></div>`;
             });
             tb.innerHTML = hT; ml.innerHTML = hM;
         }
         function getButtonHtml(m) {
-            if (m.winner) return `
-                <button onclick="openScore('${m.id}')" class="text-right hover:bg-slate-800 p-2 rounded transition group">
-                    <div class="text-orange-500 font-bold text-sm flex items-center justify-end gap-1"><i class="ph ph-check-circle"></i> ${m.winner}</div>
-                    <div class="text-xs text-slate-400 font-mono font-bold mt-0.5 text-right">${m.p1_sets} - ${m.p2_sets}</div>
-                </button>`;
-
+            if (m.winner) return `<button onclick="openScore('${m.id}')" class="text-right hover:bg-gray-100 dark:hover:bg-zinc-800 p-2 rounded transition group"><div class="text-orange-500 font-bold text-sm flex items-center justify-end gap-1"><i class="ph ph-trophy"></i> ${m.winner}</div><div class="text-xs text-zinc-500 dark:text-zinc-400 font-mono font-bold mt-0.5 text-right">${m.p1_sets} - ${m.p2_sets}</div></button>`;
             if (m.p1 && m.p2) return `<button onclick="openScore('${m.id}')" class="bg-orange-600 hover:bg-orange-500 text-white text-xs px-4 py-1.5 rounded-full font-bold transition shadow-lg shadow-orange-900/20">Report Results</button>`;
-            return `<span class="text-[10px] text-slate-500 border border-slate-800 px-2 py-1 rounded font-mono">PROJECTED</span>`;
+            return `<span class="text-[10px] text-zinc-400 dark:text-zinc-500 border border-gray-200 dark:border-zinc-800 px-2 py-1 rounded font-mono">PLANNED</span>`;
         }
         function filterSchedule() { const term = document.getElementById('scheduleFilter').value.toLowerCase(); document.querySelectorAll('.schedule-row').forEach(row => { row.style.display = row.querySelector('.team-names').innerText.toLowerCase().includes(term) ? '' : 'none'; }); }
 
@@ -414,10 +391,10 @@
             const root = document.getElementById('bracketRoot'), svg = document.getElementById('connections'); root.innerHTML = ''; root.appendChild(svg);
             const wb = TOURNAMENT.matches.filter(m => m.bracket === 'winners'), lb = TOURNAMENT.matches.filter(m => m.bracket === 'losers'), fin = TOURNAMENT.matches.filter(m => m.bracket === 'finals');
             const topRow = document.createElement('div'); topRow.className = 'wb-finals-row mb-20';
-            const wbC = document.createElement('div'); wbC.className = 'tree-container relative'; wbC.innerHTML = `<div class="absolute -top-10 left-0 text-slate-500 font-bold uppercase tracking-widest text-xs">Winners Bracket</div>`; renderTree(wb, wbC); topRow.appendChild(wbC);
-            if (fin.length) { const fCol = document.createElement('div'); fCol.className = 'flex flex-col justify-end items-center gap-2 min-w-[280px] z-10'; fCol.innerHTML = `<div class="text-center text-orange-500 font-bold uppercase tracking-widest text-xs"><i class="ph ph-trophy"></i> Championship</div>`; fin.forEach(m => fCol.appendChild(createCard(m))); topRow.appendChild(fCol); }
+            const wbC = document.createElement('div'); wbC.className = 'tree-container relative'; wbC.innerHTML = `<div class="absolute -top-10 left-0 text-zinc-400 dark:text-zinc-500 font-bold uppercase tracking-widest text-xs">Winners Bracket</div>`; renderTree(wb, wbC); topRow.appendChild(wbC);
+            if (fin.length) { const fCol = document.createElement('div'); fCol.className = 'flex flex-col justify-end items-center gap-2 min-w-[280px] z-10'; fCol.innerHTML = `<div class="text-center text-orange-500 font-bold uppercase tracking-widest text-xs mb-1"><i class="ph ph-trophy"></i> Championship</div>`; fin.forEach(m => fCol.appendChild(createCard(m))); topRow.appendChild(fCol); }
             root.appendChild(topRow);
-            if (lb.length) { const lbC = document.createElement('div'); lbC.className = 'tree-container relative pt-12 border-t border-slate-800'; lbC.innerHTML = `<div class="absolute top-4 left-0 text-slate-500 font-bold uppercase tracking-widest text-xs">Losers Bracket</div>`; renderTree(lb, lbC); root.appendChild(lbC); }
+            if (lb.length) { const lbC = document.createElement('div'); lbC.className = 'tree-container relative pt-12 border-t border-gray-200 dark:border-zinc-800'; lbC.innerHTML = `<div class="absolute top-4 left-0 text-zinc-400 dark:text-zinc-500 font-bold uppercase tracking-widest text-xs">Losers Bracket</div>`; renderTree(lb, lbC); root.appendChild(lbC); }
         }
         function renderTree(matches, container) {
             const rounds = {}; matches.forEach(m => { if (!rounds[m.round]) rounds[m.round] = []; rounds[m.round].push(m) });
@@ -426,35 +403,33 @@
         function createCard(m) {
             const div = document.createElement('div'); div.id = `match-${m.id}`; if (!m.number) div.classList.add('invisible-card');
             const color = m.time ? stringToColor(m.court + 'salt') : 'transparent';
-            div.className = `match-card w-64 bg-slate-900 rounded-xl border border-slate-800 cursor-pointer select-none relative overflow-hidden group ${!m.number ? 'invisible-card' : ''} ${m.winner ? 'border-orange-500/50 ring-1 ring-orange-900/30' : ''}`;
-            div.onclick = () => openScore(m.id);
-            const status = m.winner ? '<span class="text-orange-500 font-bold text-xs"><i class="ph ph-check"></i> Played</span>' : (m.status === 'Scheduled' ? `<span class="text-white font-bold text-xs font-mono">${m.time}</span>` : '<span class="text-slate-600 text-xs">Pending</span>');
+            div.className = `match-card w-64 bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-800 cursor-pointer select-none relative overflow-hidden group ${!m.number ? 'invisible-card' : ''} ${m.winner ? 'border-orange-500/50 ring-1 ring-orange-900/30' : ''}`;
+            div.onclick = () => { if (m.p1 && m.p2) openScore(m.id); };
+            const status = m.winner ? '<span class="text-orange-500 font-bold text-xs"><i class="ph ph-check"></i> Played</span>' : (m.status === 'Scheduled' ? `<span class="text-zinc-800 dark:text-white font-bold text-xs font-mono">${m.time}</span>` : '<span class="text-zinc-400 dark:text-zinc-600 text-xs">Pending</span>');
             const courtName = m.time ? m.court : '';
             const courtBadge = m.time ? `<div class="text-[10px] font-bold px-2 py-0.5 rounded w-fit text-white uppercase tracking-wider mr-2" style="background:${color}">${courtName}</div>` : '';
-            const p1 = m.p1 || `<span class="text-xs italic text-slate-600">${m.p1_label}</span>`, p2 = m.p2 || `<span class="text-xs italic text-slate-600">${m.p2_label}</span>`;
-            div.innerHTML = `<div class="px-4 py-2 bg-slate-950/30 flex justify-between items-center border-b border-slate-800"><div class="flex items-center gap-1"><span class="font-mono text-slate-500 text-xs mr-2">#${m.number || '-'}</span>${courtBadge}</div>${status}</div><div class="p-3 space-y-2"><div class="flex justify-between items-center ${m.winner === m.p1 ? 'text-orange-500 font-bold' : 'text-slate-400'}"><span class="truncate pr-2 text-sm">${p1}</span><span class="bg-slate-950 px-2 py-0.5 rounded text-xs text-slate-500">${m.p1_sets}</span></div><div class="flex justify-between items-center ${m.winner === m.p2 ? 'text-orange-500 font-bold' : 'text-slate-400'}"><span class="truncate pr-2 text-sm">${p2}</span><span class="bg-slate-950 px-2 py-0.5 rounded text-xs text-slate-500">${m.p2_sets}</span></div></div>`;
+            const p1 = m.p1 || `<span class="text-xs italic text-zinc-400 dark:text-zinc-600">${m.p1_label}</span>`, p2 = m.p2 || `<span class="text-xs italic text-zinc-400 dark:text-zinc-600">${m.p2_label}</span>`;
+            div.innerHTML = `<div class="px-4 py-2 bg-gray-50 dark:bg-zinc-950/30 flex justify-between items-center border-b border-gray-200 dark:border-zinc-800"><div class="flex items-center gap-1"><span class="font-mono text-zinc-400 dark:text-zinc-500 text-xs mr-2">#${m.number || '-'}</span>${courtBadge}</div>${status}</div><div class="p-3 space-y-2"><div class="flex justify-between items-center ${m.winner === m.p1 ? 'text-orange-600 dark:text-orange-500 font-bold' : 'text-zinc-500 dark:text-zinc-400'}"><span class="truncate pr-2 text-sm">${p1}</span><span class="bg-gray-100 dark:bg-zinc-950 px-2 py-0.5 rounded text-xs text-zinc-500">${m.p1_sets}</span></div><div class="flex justify-between items-center ${m.winner === m.p2 ? 'text-orange-600 dark:text-orange-500 font-bold' : 'text-zinc-500 dark:text-zinc-400'}"><span class="truncate pr-2 text-sm">${p2}</span><span class="bg-gray-100 dark:bg-zinc-950 px-2 py-0.5 rounded text-xs text-zinc-500">${m.p2_sets}</span></div></div>`;
             return div;
         }
 
         function openSettings() {
-            document.getElementById('settingName').value = TOURNAMENT.name;
-            document.getElementById('settingCourts').value = TOURNAMENT.courts.join(', ');
-            document.getElementById('settingTeams').value = TOURNAMENT.teams.join('\n');
-            document.getElementById('settingStartTime').value = TOURNAMENT.start_time;
-            document.getElementById('settingDuration').value = TOURNAMENT.match_duration;
+            // Safe checking for null/undefined values before assigning
+            document.getElementById('settingName').value = TOURNAMENT.name || '';
+            document.getElementById('settingCourts').value = (TOURNAMENT.courts || []).join(', ');
+            document.getElementById('settingTeams').value = (TOURNAMENT.teams || []).join('\n');
+            document.getElementById('settingStartTime').value = TOURNAMENT.start_time || '09:00';
+            document.getElementById('settingDuration').value = TOURNAMENT.match_duration || 30;
             document.getElementById('settingsModal').showModal();
         }
         function openScore(id) {
             document.getElementById('scoreError').classList.add('hidden');
             const m = TOURNAMENT.matches.find(x => x.id === id);
-            // Double check just in case called from schedule list
             if (!m.p1 || !m.p2) return;
 
             activeMatchId = id; document.getElementById('modalMatchIdDisp').innerText = m.number || id; document.getElementById('mP1').innerText = m.p1 || m.p1_label; document.getElementById('mP2').innerText = m.p2 || m.p2_label;
-
             document.getElementById('modalTimeDisplay').innerText = m.time || "--:--";
             document.getElementById('modalCourtDisplay').innerText = m.court || "TBD";
-
             document.getElementById('scoreCode').value = '';
             const clearBtn = document.getElementById('clearBtn');
             if (m.winner) { clearBtn.classList.remove('hidden'); clearBtn.classList.add('block'); }
@@ -462,97 +437,56 @@
             document.getElementById('scoreModal').showModal();
             const c = document.getElementById('setsContainer'); c.innerHTML = ''; if (m.sets && m.sets.length) m.sets.forEach(s => addSet(s.p1, s.p2)); else addSet();
         }
-
-        function addSet(v1 = '', v2 = '') {
-            const d = document.createElement('div');
-            d.className = "grid grid-cols-3 gap-4 items-center p-2 rounded hover:bg-slate-800/50 transition";
-            const container = document.getElementById('setsContainer');
-            const idx = container.children.length + 1;
-            d.innerHTML = `
-                <input type="number" class="sp1 w-full bg-slate-950 border border-slate-700 p-2 rounded text-center focus:border-orange-500 outline-none text-white font-mono text-lg" value="${v1}" placeholder="0">
-                <div class="text-slate-500 text-center text-xs font-bold uppercase tracking-wider">Set ${idx}</div>
-                <input type="number" class="sp2 w-full bg-slate-950 border border-slate-700 p-2 rounded text-center focus:border-orange-500 outline-none text-white font-mono text-lg" value="${v2}" placeholder="0">
-            `;
-            container.appendChild(d);
-        }
+        function addSet(v1 = '', v2 = '') { const d = document.createElement('div'); d.className = "grid grid-cols-3 gap-2 items-center"; d.innerHTML = `<input type="number" class="sp1 w-full bg-gray-50 dark:bg-zinc-950 border border-gray-300 dark:border-zinc-800 p-2 rounded text-center focus:border-orange-500 outline-none text-zinc-900 dark:text-white" value="${v1}"><span class="text-zinc-400 dark:text-zinc-600 text-center font-bold">-</span><input type="number" class="sp2 w-full bg-gray-50 dark:bg-zinc-950 border border-gray-300 dark:border-zinc-800 p-2 rounded text-center focus:border-orange-500 outline-none text-zinc-900 dark:text-white" value="${v2}">`; document.getElementById('setsContainer').appendChild(d); }
 
         async function submitScore() {
             try {
-                const btn = document.getElementById('submitBtn');
-                btn.innerHTML = `<i class="ph ph-spinner animate-spin"></i> Submitting...`;
+                const btn = document.getElementById('submitBtn'); btn.innerHTML = `<i class="ph ph-spinner animate-spin"></i> Submitting...`;
                 const code = document.getElementById('scoreCode').value, sets = [];
                 document.querySelectorAll('#setsContainer > div').forEach(d => { const s1 = d.querySelector('.sp1').value, s2 = d.querySelector('.sp2').value; if (s1 !== '' && s2 !== '') sets.push({ p1: s1, p2: s2 }) });
-                // IMPROVED ERROR HANDLING
-                const res = await fetch(`/api/report/${TOURNAMENT.id}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id: activeMatchId, sets, code })
-                });
-
-                let data;
-                try { data = await res.json(); } catch (e) { throw new Error(`Server Error: ${res.status}`); }
-
-                if (res.ok) {
-                    document.getElementById('scoreModal').close();
-                    fetchTournamentData();
-                } else {
-                    showError('scoreError', data.error || "Unknown Error");
-                }
-            } catch (e) {
-                showError('scoreError', e.message || "Network Error");
-            } finally {
-                document.getElementById('submitBtn').innerHTML = 'Submit Result';
-            }
+                const res = await fetch(`/api/report/${TOURNAMENT.id}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: activeMatchId, sets, code }) });
+                if (res.ok) { document.getElementById('scoreModal').close(); fetchTournamentData(); }
+                else showError('scoreError', (await res.json()).error);
+            } catch (e) { showError('scoreError', "Network error"); } finally { document.getElementById('submitBtn').innerHTML = 'Submit Result'; }
         }
-
         async function clearScore() {
             if (!confirm("Clear results for this match?")) return;
             const code = document.getElementById('scoreCode').value;
             const res = await fetch(`/api/report/${TOURNAMENT.id}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: activeMatchId, clear: true, code }) });
-            if (res.ok) { document.getElementById('scoreModal').close(); fetchTournamentData(); }
-            else showError('scoreError', (await res.json()).error);
+            if (res.ok) { document.getElementById('scoreModal').close(); fetchTournamentData(); } else showError('scoreError', (await res.json()).error);
         }
-
         async function saveSettings() {
-            const n = document.getElementById('settingName').value, c = document.getElementById('settingCourts').value, t = document.getElementById('settingTeams').value;
-            const st = document.getElementById('settingStartTime').value, dur = document.getElementById('settingDuration').value;
-            if ((await fetch(`/api/settings/${TOURNAMENT.id}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: n, courts: c, teams: t, start_time: st, match_duration: dur }) })).ok) { document.getElementById('settingsModal').close(); fetchTournamentData(); }
-            else showError('settingsError', "Error saving settings");
+            const n = document.getElementById('settingName').value, c = document.getElementById('settingCourts').value, t = document.getElementById('settingTeams').value, st = document.getElementById('settingStartTime').value, dur = document.getElementById('settingDuration').value;
+            if ((await fetch(`/api/settings/${TOURNAMENT.id}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: n, courts: c, teams: t, start_time: st, match_duration: dur }) })).ok) { document.getElementById('settingsModal').close(); fetchTournamentData(); } else showError('settingsError', "Error saving settings");
         }
-
-        async function recalculateSchedule() {
-            if ((await fetch(`/api/settings/${TOURNAMENT.id}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ recalculate: true }) })).ok) { document.getElementById('settingsModal').close(); fetchTournamentData(); }
-            else showError('settingsError', "Error calculating schedule");
-        }
-
+        async function recalculateSchedule() { if ((await fetch(`/api/settings/${TOURNAMENT.id}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ recalculate: true }) })).ok) { document.getElementById('settingsModal').close(); fetchTournamentData(); } else showError('settingsError', "Error"); }
         async function deleteTournament() { if (confirm("Are you sure?")) { if ((await fetch(`/api/delete/${TOURNAMENT.id}`, { method: 'POST' })).ok) window.location.href = '/'; } }
-
-        function showError(elementId, msg) {
-            const el = document.getElementById(elementId);
-            el.innerText = msg || "An error occurred";
-            el.classList.remove('hidden');
-        }
+        function showError(elementId, msg) { const el = document.getElementById(elementId); el.innerText = msg || "An error occurred"; el.classList.remove('hidden'); }
 
         function setView(view) {
             document.getElementById('view-bracket').classList.add('hidden'); document.getElementById('view-schedule').classList.add('hidden'); document.getElementById('view-' + view).classList.remove('hidden');
-            document.querySelectorAll('#btn-bracket-d, #btn-schedule-d').forEach(b => b.classList.remove('bg-slate-800', 'text-white', 'shadow-sm')); document.querySelectorAll('#btn-bracket-d, #btn-schedule-d').forEach(b => b.classList.add('text-slate-400')); document.getElementById('btn-' + view + '-d').classList.add('bg-slate-800', 'text-white', 'shadow-sm'); document.getElementById('btn-' + view + '-d').classList.remove('text-slate-400');
-            document.querySelectorAll('#btn-bracket-m, #btn-schedule-m').forEach(b => b.classList.remove('active'));
 
-            const bM = document.getElementById('btn-bracket-m');
-            const sM = document.getElementById('btn-schedule-m');
-            if (view === 'bracket') {
-                bM.classList.add('text-orange-500', 'border-t-2', 'border-orange-500', 'bg-slate-800'); bM.classList.remove('text-slate-500');
-                sM.classList.remove('text-orange-500', 'border-t-2', 'border-orange-500', 'bg-slate-800'); sM.classList.add('text-slate-500');
-                setTimeout(drawConnections, 50);
-            } else {
-                sM.classList.add('text-orange-500', 'border-t-2', 'border-orange-500', 'bg-slate-800'); sM.classList.remove('text-slate-500');
-                bM.classList.remove('text-orange-500', 'border-t-2', 'border-orange-500', 'bg-slate-800'); bM.classList.add('text-slate-500');
-            }
+            // Desktop
+            document.querySelectorAll('#btn-bracket-d, #btn-schedule-d').forEach(b => {
+                b.classList.remove('bg-white', 'dark:bg-zinc-800', 'text-zinc-900', 'dark:text-white', 'shadow-sm', 'border', 'border-gray-200', 'dark:border-transparent');
+                b.classList.add('text-zinc-500', 'dark:text-zinc-400');
+            });
+            const dBtn = document.getElementById('btn-' + view + '-d');
+            dBtn.classList.add('bg-white', 'dark:bg-zinc-800', 'text-zinc-900', 'dark:text-white', 'shadow-sm', 'border', 'border-gray-200', 'dark:border-transparent');
+            dBtn.classList.remove('text-zinc-500', 'dark:text-zinc-400');
+
+            // Mobile
+            document.querySelectorAll('#btn-bracket-m, #btn-schedule-m').forEach(b => {
+                b.classList.remove('text-orange-500', 'border-t-2', 'border-orange-500', 'bg-zinc-50', 'dark:bg-zinc-800');
+                b.classList.add('text-zinc-500');
+            });
+            const mBtn = document.getElementById('btn-' + view + '-m');
+            mBtn.classList.add('text-orange-500', 'border-t-2', 'border-orange-500', 'bg-zinc-50', 'dark:bg-zinc-800');
+            mBtn.classList.remove('text-zinc-500');
+
+            if (view === 'bracket') setTimeout(drawConnections, 50);
         }
-        function drawConnections() {
-            const svg = document.getElementById('connections'), root = document.getElementById('bracketRoot'); svg.innerHTML = ''; svg.style.width = root.scrollWidth + 'px'; svg.style.height = root.scrollHeight + 'px';
-            TOURNAMENT.matches.forEach(m => { const s = document.getElementById(`match-${m.id}`), n = document.getElementById(`match-${m.next_win}`); if (s && !s.classList.contains('invisible-card') && n) drawPath(svg, s, n); });
-        }
+        function drawConnections() { const svg = document.getElementById('connections'), root = document.getElementById('bracketRoot'); svg.innerHTML = ''; svg.style.width = root.scrollWidth + 'px'; svg.style.height = root.scrollHeight + 'px'; TOURNAMENT.matches.forEach(m => { const s = document.getElementById(`match-${m.id}`), n = document.getElementById(`match-${m.next_win}`); if (s && !s.classList.contains('invisible-card') && n) drawPath(svg, s, n); }); }
         function drawPath(svg, el1, el2) { if (!el1 || !el2) return; const r1 = el1.getBoundingClientRect(), r2 = el2.getBoundingClientRect(), root = document.getElementById('bracketRoot').getBoundingClientRect(); const sx = r1.right - root.left, sy = r1.top + r1.height / 2 - root.top, ex = r2.left - root.left, ey = r2.top + r2.height / 2 - root.top; const path = document.createElementNS("http://www.w3.org/2000/svg", "path"), c1 = sx + (ex - sx) / 2; path.setAttribute("d", `M ${sx} ${sy} C ${c1} ${sy}, ${c1} ${ey}, ${ex} ${ey}`); svg.appendChild(path); }
 
         checkAuth(); fetchTournamentData(); setView('bracket');

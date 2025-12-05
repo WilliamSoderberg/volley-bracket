@@ -7,31 +7,42 @@
     <title>VolleyManager</title>
     <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.svg') }}">
     <!-- Link to the compiled CSS file we are about to generate -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='src/main.css') }}">
-    <!-- Tailwind CSS: For production, install via npm/postcss. Do not use CDN. -->
-    <!-- <script src="https://cdn.tailwindcss.com"></script>
-    <script>tailwind.config = { darkMode: 'class' }</script> -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='dist/output.css') }}">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script>
+        // Check local storage or system preference on load
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    </script>
 </head>
 
-<body class="bg-gray-100 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen">
+<body class="bg-gray-100 dark:bg-zinc-900 text-zinc-800 dark:text-zinc-100 min-h-screen transition-colors duration-200">
 
     <div class="container mx-auto p-6 max-w-4xl">
         <header class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
             <div class="flex items-center gap-3">
                 <i class="ph ph-volleyball text-4xl text-orange-500"></i>
                 <div>
-                    <h1 class="text-3xl font-bold">VolleyManager</h1>
-                    <p class="text-slate-500 dark:text-slate-400">Tournament Organizer</p>
+                    <h1 class="text-3xl font-bold text-zinc-900 dark:text-white">VolleyManager</h1>
+                    <p class="text-zinc-500 dark:text-zinc-400">Tournament Organizer</p>
                 </div>
             </div>
 
-            <div id="authControls"></div>
+            <div class="flex items-center gap-4">
+                <button onclick="toggleTheme()"
+                    class="flex items-center justify-center p-2 rounded-full hover:bg-zinc-200 dark:hover:bg-zinc-800 transition text-zinc-600 dark:text-zinc-400">
+                    <i id="themeIcon" class="ph ph-moon text-xl"></i>
+                </button>
+                <div id="authControls"></div>
+            </div>
         </header>
 
         <!-- Main Actions Row -->
         <div class="flex justify-between items-center mb-6">
-            <h2 class="text-xl font-bold text-slate-300">Active Tournaments</h2>
+            <h2 class="text-xl font-bold text-zinc-700 dark:text-zinc-300">Active Tournaments</h2>
             <div id="createBtnContainer"></div>
         </div>
 
@@ -39,9 +50,11 @@
         <div class="grid md:grid-cols-2 gap-6">
             {% for id, t in tournaments.items() %}
             <a href="/t/{{ id }}"
-                class="block bg-white dark:bg-slate-800 p-6 rounded-xl shadow hover:shadow-xl hover:scale-[1.02] transition border border-gray-200 dark:border-slate-700 group">
+                class="block bg-white dark:bg-zinc-800 p-6 rounded-xl shadow-sm hover:shadow-md dark:shadow-none hover:scale-[1.02] transition border border-gray-200 dark:border-zinc-700 group">
                 <div class="flex justify-between items-start mb-4">
-                    <h2 class="text-xl font-bold truncate group-hover:text-orange-400 transition">{{ t.name }}</h2>
+                    <h2
+                        class="text-xl font-bold truncate text-zinc-900 dark:text-white group-hover:text-orange-500 dark:group-hover:text-orange-400 transition">
+                        {{ t.name }}</h2>
                     <span
                         class="bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300 text-xs px-2 py-1 rounded font-mono border border-orange-200 dark:border-orange-800">{{
                         t.type|upper }}</span>
@@ -52,13 +65,14 @@
                     <div class="flex items-center gap-1"><i class="ph ph-court-basketball text-orange-500"></i> {{
                         t.courts|length }} Courts</div>
                 </div>
-                <div class="mt-4 flex items-center gap-2 text-xs text-gray-400 border-t border-slate-700 pt-3">
+                <div
+                    class="mt-4 flex items-center gap-2 text-xs text-gray-400 border-t border-gray-100 dark:border-zinc-700 pt-3">
                     <i class="ph ph-hash"></i> ID: <span class="font-mono">{{ id }}</span>
                 </div>
             </a>
             {% else %}
             <div
-                class="col-span-2 text-center py-20 bg-white dark:bg-slate-800 rounded-xl border border-dashed border-gray-300 dark:border-slate-700">
+                class="col-span-2 text-center py-20 bg-white dark:bg-zinc-800 rounded-xl border border-dashed border-gray-300 dark:border-zinc-700">
                 <p class="text-xl text-gray-400">No tournaments found.</p>
             </div>
             {% endfor %}
@@ -67,49 +81,47 @@
 
     <!-- Create Modal -->
     <dialog id="createModal"
-        class="bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-xl shadow-2xl backdrop:bg-black/60 p-0 w-full max-w-lg m-auto">
+        class="bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white rounded-xl shadow-2xl backdrop:bg-black/60 p-0 w-full max-w-lg m-auto border border-gray-200 dark:border-zinc-700">
         <form action="/create" method="POST" class="p-6">
             <h2 class="text-2xl font-bold mb-6 flex items-center gap-2"><i
                     class="ph ph-plus-circle text-orange-500"></i> New Tournament</h2>
             <div class="space-y-4">
-                <div><label class="block text-sm font-bold mb-1 text-slate-500 uppercase text-xs">Name</label><input
-                        type="text" name="name" required
-                        class="w-full bg-gray-50 dark:bg-slate-900 border border-gray-300 dark:border-slate-600 rounded p-2 focus:border-orange-500 outline-none">
+                <div><label class="block text-sm font-bold mb-1 text-zinc-500 uppercase text-xs">Name</label><input
+                        type="text" name="name" placeholder="My Awesome Tournament" required
+                        class="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-300 dark:border-zinc-600 rounded p-2 focus:border-orange-500 outline-none">
                 </div>
                 <div class="grid grid-cols-2 gap-4">
-                    <div><label class="block text-sm font-bold mb-1 text-slate-500 uppercase text-xs">Code</label><input
-                            type="text" name="code" value="1234" required
-                            class="w-full bg-gray-50 dark:bg-slate-900 border border-gray-300 dark:border-slate-600 rounded p-2 text-center font-mono">
+                    <div><label class="block text-sm font-bold mb-1 text-zinc-500 uppercase text-xs">Code</label><input
+                            type="text" name="code" placeholder="••••" value="1234" required
+                            class="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-300 dark:border-zinc-600 rounded p-2 text-center font-mono">
                     </div>
-                    <div><label
-                            class="block text-sm font-bold mb-1 text-slate-500 uppercase text-xs">Type</label><select
+                    <div><label class="block text-sm font-bold mb-1 text-zinc-500 uppercase text-xs">Type</label><select
                             name="type"
-                            class="w-full bg-gray-50 dark:bg-slate-900 border border-gray-300 dark:border-slate-600 rounded p-2">
+                            class="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-300 dark:border-zinc-600 rounded p-2">
                             <option value="double">Double Elimination</option>
                             <option value="single">Single Elimination</option>
                         </select></div>
                 </div>
-                <div><label class="block text-sm font-bold mb-1 text-slate-500 uppercase text-xs">Teams (One per
+                <div><label class="block text-sm font-bold mb-1 text-zinc-500 uppercase text-xs">Teams (One per
                         line)</label><textarea name="teams" required
-                        class="w-full h-32 bg-gray-50 dark:bg-slate-900 border border-gray-300 dark:border-slate-600 rounded p-2 font-mono text-sm focus:border-orange-500 outline-none"></textarea>
+                        class="w-full h-32 bg-gray-50 dark:bg-zinc-900 border border-gray-300 dark:border-zinc-600 rounded p-2 font-mono text-sm focus:border-orange-500 outline-none"></textarea>
                 </div>
-                <div><label class="block text-sm font-bold mb-1 text-slate-500 uppercase text-xs">Courts</label><input
+                <div><label class="block text-sm font-bold mb-1 text-zinc-500 uppercase text-xs">Courts</label><input
                         type="text" name="courts" placeholder="Center Court, Court 1" required
-                        class="w-full bg-gray-50 dark:bg-slate-900 border border-gray-300 dark:border-slate-600 rounded p-2 focus:border-orange-500 outline-none">
+                        class="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-300 dark:border-zinc-600 rounded p-2 focus:border-orange-500 outline-none">
                 </div>
                 <div class="grid grid-cols-2 gap-4">
-                    <div><label class="block text-sm font-bold mb-1 text-slate-500 uppercase text-xs">Duration
+                    <div><label class="block text-sm font-bold mb-1 text-zinc-500 uppercase text-xs">Duration
                             (mins)</label><input type="number" name="duration" value="30"
-                            class="w-full bg-gray-50 dark:bg-slate-900 border border-gray-300 dark:border-slate-600 rounded p-2">
+                            class="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-300 dark:border-zinc-600 rounded p-2">
                     </div>
-                    <div><label
-                            class="block text-sm font-bold mb-1 text-slate-500 uppercase text-xs">Start</label><input
+                    <div><label class="block text-sm font-bold mb-1 text-zinc-500 uppercase text-xs">Start</label><input
                             type="time" name="start_time" value="10:00"
-                            class="w-full bg-gray-50 dark:bg-slate-900 border border-gray-300 dark:border-slate-600 rounded p-2">
+                            class="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-300 dark:border-zinc-600 rounded p-2">
                     </div>
                 </div>
             </div>
-            <div class="mt-8 flex justify-end gap-3 border-t border-slate-700 pt-4">
+            <div class="mt-8 flex justify-end gap-3 border-t border-gray-200 dark:border-zinc-700 pt-4">
                 <button type="button" onclick="document.getElementById('createModal').close()"
                     class="px-4 py-2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">Cancel</button>
                 <button type="submit"
@@ -120,30 +132,47 @@
     </dialog>
 
     <dialog id="loginModal"
-        class="bg-slate-900 text-white rounded-xl shadow-2xl backdrop:bg-black/90 p-0 w-80 border border-slate-700 m-auto">
+        class="bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white rounded-xl shadow-2xl backdrop:bg-black/60 p-0 w-80 m-auto border border-gray-200 dark:border-zinc-700">
         <div class="p-6">
-            <div class="flex justify-center mb-4">
-                <div class="bg-slate-800 p-3 rounded-full"><i class="ph ph-lock-key text-2xl text-orange-500"></i></div>
+            <div class="flex justify-center">
+                <div class="flex justify-between items-center bg-zinc-100 dark:bg-zinc-800 p-2 rounded-full"><i
+                        class="ph ph-lock-key text-2xl text-orange-500"></i></div>
             </div>
             <h2 class="text-lg font-bold mb-4 text-center">Admin Login</h2>
-            <div id="loginError"
-                class="hidden text-xs text-red-400 text-center mb-3 bg-red-900/10 p-2 rounded border border-red-900/30">
-                Invalid Credentials</div>
+            <div id="loginError" class="hidden text-xs text-red-500 text-center mb-3">Invalid Credentials</div>
             <input id="loginUser"
-                class="w-full bg-slate-950 border border-slate-800 rounded p-3 mb-3 focus:border-orange-500 outline-none transition"
-                placeholder="Username">
+                class="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-300 dark:border-zinc-600 rounded p-3 mb-3 focus:border-orange-500 outline-none transition"
+                placeholder="Username" onkeydown="if(event.key==='Enter') performLogin()">
             <input type="password" id="loginPass"
-                class="w-full bg-slate-950 border border-slate-800 rounded p-3 mb-6 focus:border-orange-500 outline-none transition"
-                placeholder="Password">
+                class="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-300 dark:border-zinc-600 rounded p-3 mb-6 focus:border-orange-500 outline-none transition"
+                placeholder="Password" onkeydown="if(event.key==='Enter') performLogin()">
             <div class="flex justify-between items-center">
-                <form method="dialog"><button class="text-slate-400 text-sm hover:text-white">Cancel</button></form>
+                <form method="dialog"><button
+                        class="px-3 py-1 text-zinc-400 text-sm hover:text-zinc-600 dark:hover:text-white">Cancel</button>
+                </form>
                 <button onclick="performLogin()"
-                    class="bg-orange-600 hover:bg-orange-500 px-6 py-2 rounded font-bold transition text-white">Login</button>
+                    class="bg-orange-600 hover:bg-orange-500 text-white px-4 py-1 rounded font-bold">Login</button>
             </div>
         </div>
     </dialog>
 
     <script>
+        // Theme Logic
+        function toggleTheme() {
+            const html = document.documentElement;
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                localStorage.theme = 'light';
+                document.getElementById('themeIcon').className = 'ph ph-sun text-xl';
+            } else {
+                html.classList.add('dark');
+                localStorage.theme = 'dark';
+                document.getElementById('themeIcon').className = 'ph ph-moon text-xl';
+            }
+        }
+        // Set init icon
+        document.getElementById('themeIcon').className = document.documentElement.classList.contains('dark') ? 'ph ph-moon text-xl' : 'ph ph-sun text-xl';
+
         async function checkAuth() {
             const res = await fetch('/api/check-auth');
             const data = await res.json();
@@ -151,17 +180,13 @@
             const createBtn = document.getElementById('createBtnContainer');
 
             if (data.is_admin) {
-                container.innerHTML = `<button onclick="logout()" class="flex items-center justify-center text-slate-400 hover:text-white transition p-1 ml-1"><i class="ph ph-sign-out text-xl"></i></button>`;
+                container.innerHTML = `<button onclick="logout()" class="flex items-center justify-center p-2 rounded-full hover:bg-zinc-200 dark:hover:bg-zinc-800 transition text-zinc-600 dark:text-zinc-400"><i class="ph ph-sign-out text-xl"></i></button>`;
                 createBtn.innerHTML = `
                     <button onclick="document.getElementById('createModal').showModal()" class="flex items-center justify-center bg-orange-600 hover:bg-orange-500 text-white px-4 py-2 rounded-lg font-bold shadow-lg flex items-center gap-2">
                         <i class="ph ph-plus"></i> Create
                     </button>`;
             } else {
-                container.innerHTML = `
-                    <button onclick="document.getElementById('loginModal').showModal()" class="text-orange-500 hover:text-orange-400 font-bold flex items-center gap-2">
-                        <i class="ph ph-lock-key"></i> Admin Login
-                    </button>
-                `;
+                container.innerHTML = `<button onclick="document.getElementById('loginModal').showModal()" class="flex items-center justify-center p-2 rounded-full hover:bg-zinc-200 dark:hover:bg-zinc-800 transition text-zinc-600 dark:text-zinc-400"><i class="ph ph-lock-key text-xl"></i></button>`;
             }
         }
 

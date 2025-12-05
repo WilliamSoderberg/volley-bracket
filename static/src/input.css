@@ -1,0 +1,21 @@
+/* 1. Import the full framework */
+@import "tailwindcss";
+
+/* 2. Configure Content Sources (CRITICAL: Use glob patterns)
+   These paths are relative to THIS css file. */
+@source "../../templates/**/*.html";
+@source "../../static/**/*.js";
+
+/* 3. Force Dark Mode 'Class' Strategy 
+   This tells Tailwind: "Apply dark styles when the .dark class is present on a parent"
+   This overrides the default system-preference media query. */
+@variant dark (&:where(.dark, .dark *));
+
+/* 4. Theme Customizations */
+@theme {
+    /* Ensure orange colors match your expectations */
+    --color-orange-500: #f97316;
+    --color-orange-600: #ea580c;
+
+    /* Define other custom variables if needed */
+}
