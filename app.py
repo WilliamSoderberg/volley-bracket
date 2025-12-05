@@ -18,6 +18,7 @@ from flask import (
     url_for,
 )
 from werkzeug.security import check_password_hash, generate_password_hash
+from werkzeug.exceptions import HTTPException
 
 app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", secrets.token_hex(16))
@@ -482,62 +483,75 @@ def view_tournament(t_id):
 
 @app.route("/api/report/<t_id>", methods=["POST"])
 def report_score(t_id):
-    t = get_tournament(t_id)
-    if not t:
-        return jsonify({"error": "Tournament not found"}), 404
+    try:
+        t = get_tournament(t_id)
+        if not t:
+            return jsonify({"error": "Tournament not found"}), 404
 
-    data = request.json
-    if not data:
-        return jsonify({"error": "Invalid JSON"}), 400
+        # Use silent=True to avoid HTML 400 errors
+        data = request.get_json(silent=True)
+        if not data:
+            return jsonify({"error": "Invalid or missing JSON body"}), 400
 
-    # Fix: Safely get code from tournament object
-    if data.get("code") != t.get("code") and not session.get("is_admin"):
-        return jsonify({"error": "Invalid Tournament Code"}), 403
+        # Force string comparison for code
+        req_code = str(data.get("code", "")).strip()
+        actual_code = str(t.get("code", "")).strip()
 
-    m_id = data["id"]
-    match = next((m for m in t["matches"] if m["id"] == m_id), None)
+        if req_code != actual_code and not session.get("is_admin"):
+            return jsonify({"error": "Invalid Tournament Code"}), 403
 
-    if match:
-        if data.get("clear"):
-            match["winner"] = None
-            match["sets"] = []
-            match["p1_sets"] = 0
-            match["p2_sets"] = 0
-            match["status"] = "Pending"
-        else:
-            if not match["p1"] or not match["p2"]:
-                return jsonify({"error": "Teams not determined yet"}), 400
-            match["sets"] = data["sets"]
-            p1s = 0
-            p2s = 0
-            p1p = 0
-            p2p = 0
-            for s in match["sets"]:
-                s1, s2 = int(s["p1"]), int(s["p2"])
-                p1p += s1
-                p2p += s2
-                if s1 > s2:
-                    p1s += 1
-                elif s2 > s1:
-                    p2s += 1
-            match["p1_sets"] = p1s
-            match["p2_sets"] = p2s
-            if p1s > p2s:
-                match["winner"] = match["p1"]
-            elif p2s > p1s:
-                match["winner"] = match["p2"]
-            elif p1p > p2p:
-                match["winner"] = match["p1"]
-            elif p2p > p1p:
-                match["winner"] = match["p2"]
+        m_id = data.get("id")
+        match = next((m for m in t["matches"] if m["id"] == m_id), None)
+
+        if match:
+            if data.get("clear"):
+                match["winner"] = None
+                match["sets"] = []
+                match["p1_sets"] = 0
+                match["p2_sets"] = 0
+                match["status"] = "Pending"
             else:
-                return jsonify({"error": "Match Tied"}), 400
-            match["status"] = "Finished"
+                if not match["p1"] or not match["p2"]:
+                    return jsonify({"error": "Teams not determined yet"}), 400
 
-        refresh_bracket(t)
-        update_schedule(t)
-        save_tournament(t_id, t)
-    return jsonify({"status": "ok"})
+                match["sets"] = data.get("sets", [])
+                p1s = 0
+                p2s = 0
+                p1p = 0
+                p2p = 0
+                for s in match["sets"]:
+                    s1, s2 = int(s["p1"]), int(s["p2"])
+                    p1p += s1
+                    p2p += s2
+                    if s1 > s2:
+                        p1s += 1
+                    elif s2 > s1:
+                        p2s += 1
+                match["p1_sets"] = p1s
+                match["p2_sets"] = p2s
+
+                if p1s > p2s:
+                    match["winner"] = match["p1"]
+                elif p2s > p1s:
+                    match["winner"] = match["p2"]
+                elif p1p > p2p:
+                    match["winner"] = match["p1"]
+                elif p2p > p1p:
+                    match["winner"] = match["p2"]
+                else:
+                    return jsonify({"error": "Match Tied"}), 400
+                match["status"] = "Finished"
+
+            refresh_bracket(t)
+            update_schedule(t)
+            save_tournament(t_id, t)
+        else:
+            return jsonify({"error": "Match not found"}), 404
+
+        return jsonify({"status": "ok"})
+
+    except Exception as e:
+        return jsonify({"error": f"Server Error: {str(e)}"}), 500
 
 
 @app.route("/api/settings/<t_id>", methods=["POST"])
@@ -588,6 +602,16 @@ def delete_tournament(t_id):
         return jsonify({"error": "Unauthorized"}), 403
     delete_tournament_data(t_id)
     return jsonify({"status": "ok"})
+
+
+# Global Error Handler to force JSON for API routes
+@app.errorhandler(Exception)  # type: ignore
+def handle_exception(e):
+    if request.path.startswith("/api/"):
+        if isinstance(e, HTTPException):
+            return jsonify({"error": e.description}), e.code
+        return jsonify({"error": str(e)}), 500
+    return e
 
 
 if __name__ == "__main__":
