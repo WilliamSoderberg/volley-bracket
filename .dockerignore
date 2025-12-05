@@ -3,7 +3,6 @@ Dockerfile
 .DS_Store
 .gitignore
 .dockerignore
-docker-compose.yml
 tournaments.db
 
 
