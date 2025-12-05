@@ -482,11 +482,24 @@
                 btn.innerHTML = `<i class="ph ph-spinner animate-spin"></i> Submitting...`;
                 const code = document.getElementById('scoreCode').value, sets = [];
                 document.querySelectorAll('#setsContainer > div').forEach(d => { const s1 = d.querySelector('.sp1').value, s2 = d.querySelector('.sp2').value; if (s1 !== '' && s2 !== '') sets.push({ p1: s1, p2: s2 }) });
-                const res = await fetch(`/api/report/${TOURNAMENT.id}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: activeMatchId, sets, code }) });
-                if (res.ok) { document.getElementById('scoreModal').close(); fetchTournamentData(); }
-                else showError('scoreError', (await res.json()).error);
+                // IMPROVED ERROR HANDLING
+                const res = await fetch(`/api/report/${TOURNAMENT.id}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: activeMatchId, sets, code })
+                });
+
+                let data;
+                try { data = await res.json(); } catch (e) { throw new Error(`Server Error: ${res.status}`); }
+
+                if (res.ok) {
+                    document.getElementById('scoreModal').close();
+                    fetchTournamentData();
+                } else {
+                    showError('scoreError', data.error || "Unknown Error");
+                }
             } catch (e) {
-                showError('scoreError', "Network error");
+                showError('scoreError', e.message || "Network Error");
             } finally {
                 document.getElementById('submitBtn').innerHTML = 'Submit Result';
             }
