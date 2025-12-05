@@ -9,7 +9,6 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='src/main.css') }}">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <style>
-        /* Only keeping scrollbar and complex bracket layout styles here */
         ::-webkit-scrollbar {
             width: 8px;
             height: 8px;
@@ -92,6 +91,34 @@
                 padding-bottom: 3.5rem;
             }
         }
+
+        /* Live Indicator Animation */
+        @keyframes pulse-live {
+            0% {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 0.5;
+                transform: scale(1.1);
+            }
+
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #22c55e;
+            border-radius: 50%;
+            display: inline-block;
+            animation: pulse-live 2s infinite;
+            margin-right: 6px;
+        }
     </style>
 </head>
 
@@ -99,12 +126,17 @@
 
     <nav class="bg-slate-900 border-b border-slate-800 p-3 shadow-md z-50 shrink-0">
         <div class="flex justify-between items-center h-10 max-w-7xl mx-auto w-full">
-            <a href="/"
-                class="text-slate-400 hover:text-orange-500 transition p-2 -ml-2 flex items-center justify-center"><i
+            <a href="/" class="text-slate-400 hover:text-orange-500 transition p-2 -ml-2"><i
                     class="ph ph-house text-xl"></i></a>
-            <div class="text-center absolute left-1/2 -translate-x-1/2">
+
+            <!-- Center: Title + Live Indicator -->
+            <div class="text-center absolute left-1/2 -translate-x-1/2 flex flex-col items-center">
                 <h1 class="text-base font-bold text-white truncate max-w-[200px]" id="navTitle">{{ t.name }}</h1>
+                <div class="text-[9px] text-green-500 font-bold uppercase tracking-widest flex items-center mt-0.5">
+                    <span class="live-dot"></span> LIVE
+                </div>
             </div>
+
             <div id="authSection" class="flex items-center gap-3"></div>
         </div>
         <div class="hidden md:flex justify-center mt-2">
@@ -289,23 +321,47 @@
         const COURT_COLORS = ['#ea580c', '#0284c7', '#059669', '#ca8a04', '#dc2626', '#0891b2', '#e11d48', '#65a30d'];
         function stringToColor(str) { let hash = 0; for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash); return COURT_COLORS[Math.abs(hash) % COURT_COLORS.length]; }
 
+        let lastDataString = "";
+
         async function fetchTournamentData() {
-            const res = await fetch(`/api/t/${T_ID}`); const data = await res.json();
-            TOURNAMENT.matches = data.tournament.matches;
-            TOURNAMENT.name = data.tournament.name;
-            TOURNAMENT.courts = data.tournament.courts;
-            TOURNAMENT.teams = data.tournament.teams;
+            try {
+                // Polling Safety: Don't refresh if user is interacting with modals
+                if (document.getElementById('scoreModal').open || document.getElementById('settingsModal').open || document.getElementById('loginModal').open) return;
 
-            // Update Tournament Settings State
-            TOURNAMENT.start_time = data.tournament.start_time;
-            TOURNAMENT.match_duration = data.tournament.match_duration;
+                const res = await fetch(`/api/t/${T_ID}`);
+                const data = await res.json();
 
-            SCHEDULE_DATA = data.schedule;
+                // Smart Refresh: Only update DOM if data changed
+                const currentDataString = JSON.stringify(data);
+                if (currentDataString === lastDataString) return;
+                lastDataString = currentDataString;
 
-            document.getElementById('navTitle').innerText = TOURNAMENT.name;
-            renderBracket(); renderScheduleTable();
-            if (!document.getElementById('view-bracket').classList.contains('hidden')) setTimeout(drawConnections, 50);
+                TOURNAMENT.matches = data.tournament.matches;
+                TOURNAMENT.name = data.tournament.name;
+                TOURNAMENT.courts = data.tournament.courts;
+                TOURNAMENT.teams = data.tournament.teams;
+                TOURNAMENT.start_time = data.tournament.start_time;
+                TOURNAMENT.match_duration = data.tournament.match_duration;
+                SCHEDULE_DATA = data.schedule;
+
+                document.getElementById('navTitle').innerText = TOURNAMENT.name;
+
+                // Preserve scroll position
+                const bracketScrollX = document.getElementById('view-bracket').scrollLeft;
+                const bracketScrollY = document.getElementById('view-bracket').scrollTop;
+
+                renderBracket();
+                renderScheduleTable();
+
+                document.getElementById('view-bracket').scrollLeft = bracketScrollX;
+                document.getElementById('view-bracket').scrollTop = bracketScrollY;
+
+                if (!document.getElementById('view-bracket').classList.contains('hidden')) setTimeout(drawConnections, 50);
+            } catch (e) { console.error("Poll failed", e); }
         }
+
+        // POLLING LOOP (Every 5 seconds)
+        setInterval(fetchTournamentData, 5000);
 
         async function checkAuth() { isAdmin = (await (await fetch('/api/check-auth')).json()).is_admin; renderAuthUI(); }
         function renderAuthUI() {
@@ -333,7 +389,6 @@
             tb.innerHTML = hT; ml.innerHTML = hM;
         }
         function getButtonHtml(m) {
-            // FIXED: Replaced "Played" text with the actual Winner's Name
             if (m.winner) return `
                 <button onclick="openScore('${m.id}')" class="text-right hover:bg-slate-800 p-2 rounded transition group">
                     <div class="text-orange-500 font-bold text-sm flex items-center justify-end gap-1"><i class="ph ph-check-circle"></i> ${m.winner}</div>
@@ -375,7 +430,6 @@
             document.getElementById('settingName').value = TOURNAMENT.name;
             document.getElementById('settingCourts').value = TOURNAMENT.courts.join(', ');
             document.getElementById('settingTeams').value = TOURNAMENT.teams.join('\n');
-            // NEW: Populate time settings
             document.getElementById('settingStartTime').value = TOURNAMENT.start_time;
             document.getElementById('settingDuration').value = TOURNAMENT.match_duration;
             document.getElementById('settingsModal').showModal();
@@ -383,8 +437,7 @@
         function openScore(id) {
             document.getElementById('scoreError').classList.add('hidden');
             const m = TOURNAMENT.matches.find(x => x.id === id);
-
-            // SILENT CLICK (Do nothing if not ready)
+            // Double check just in case called from schedule list
             if (!m.p1 || !m.p2) return;
 
             activeMatchId = id; document.getElementById('modalMatchIdDisp').innerText = m.number || id; document.getElementById('mP1').innerText = m.p1 || m.p1_label; document.getElementById('mP2').innerText = m.p2 || m.p2_label;
@@ -399,6 +452,7 @@
             document.getElementById('scoreModal').showModal();
             const c = document.getElementById('setsContainer'); c.innerHTML = ''; if (m.sets && m.sets.length) m.sets.forEach(s => addSet(s.p1, s.p2)); else addSet();
         }
+
         function addSet(v1 = '', v2 = '') {
             const d = document.createElement('div');
             d.className = "grid grid-cols-3 gap-4 items-center p-2 rounded hover:bg-slate-800/50 transition";
@@ -438,7 +492,6 @@
 
         async function saveSettings() {
             const n = document.getElementById('settingName').value, c = document.getElementById('settingCourts').value, t = document.getElementById('settingTeams').value;
-            // NEW: Capture time settings
             const st = document.getElementById('settingStartTime').value, dur = document.getElementById('settingDuration').value;
             if ((await fetch(`/api/settings/${TOURNAMENT.id}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: n, courts: c, teams: t, start_time: st, match_duration: dur }) })).ok) { document.getElementById('settingsModal').close(); fetchTournamentData(); }
             else showError('settingsError', "Error saving settings");
@@ -462,7 +515,6 @@
             document.querySelectorAll('#btn-bracket-d, #btn-schedule-d').forEach(b => b.classList.remove('bg-slate-800', 'text-white', 'shadow-sm')); document.querySelectorAll('#btn-bracket-d, #btn-schedule-d').forEach(b => b.classList.add('text-slate-400')); document.getElementById('btn-' + view + '-d').classList.add('bg-slate-800', 'text-white', 'shadow-sm'); document.getElementById('btn-' + view + '-d').classList.remove('text-slate-400');
             document.querySelectorAll('#btn-bracket-m, #btn-schedule-m').forEach(b => b.classList.remove('active'));
 
-            // Tailwind toggle for mobile bottom bar
             const bM = document.getElementById('btn-bracket-m');
             const sM = document.getElementById('btn-schedule-m');
             if (view === 'bracket') {
