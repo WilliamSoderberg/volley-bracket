@@ -1,4 +1,6 @@
 import math
+import os
+from pathlib import Path
 import uuid
 import json
 import sqlite3
@@ -17,11 +19,14 @@ from flask import (
 from werkzeug.security import check_password_hash, generate_password_hash
 
 app = Flask(__name__)
-app.secret_key = secrets.token_hex(16)
-DATABASE = "tournaments.db"
+app.secret_key = os.getenv("FLASK_SECRET_KEY", secrets.token_hex(16))
 
-ADMIN_USER = "LVSMMW"
-ADMIN_HASH = generate_password_hash("Lerbergetsvolleyboll2018")
+
+DB_DIR = os.getenv("DB_PATH", "./")
+ADMIN_USER = os.getenv("ADMIN_USER", "admin")
+ADMIN_HASH = generate_password_hash(os.getenv("ADMIN_PASSWORD", "admin"))
+DATABASE = Path(DB_DIR) / "tournaments.db"
+DATABASE.parent.mkdir(exist_ok=True)
 
 
 def get_db():
@@ -591,6 +596,4 @@ def delete_tournament(t_id):
 
 
 if __name__ == "__main__":
-    from waitress import serve
-
-    serve(app, host="0.0.0.0", port=8080)
+    app.run(debug=True, host="0.0.0.0", port=8080)

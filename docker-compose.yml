@@ -1,0 +1,17 @@
+services:
+  volley-manager:
+    build: .
+    container_name: volley_manager
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      - ADMIN_USER=admin
+      - ADMIN_PASSWORD=secure_password_here
+      - DB_PATH=/data/tournaments.db
+      - FLASK_SECRET_KEY=your_secret_key_here
+    volumes:
+      - volley_data:/data
+
+volumes:
+  volley_data:
