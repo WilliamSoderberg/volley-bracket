@@ -4,7 +4,6 @@ Dockerfile
 .gitignore
 .dockerignore
 docker-compose.yml
-requirements.txt
 tournaments.db
 
 
