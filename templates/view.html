@@ -124,32 +124,36 @@
             bottom: 0;
             padding-top: env(safe-area-inset-top);
         }
+
+        /* SCROLLBAR FIX: Use Margin instead of Padding on mobile to lift the scrollbar track */
+        @media (max-width: 768px) {
+            main {
+                margin-bottom: calc(3.5rem + env(safe-area-inset-bottom));
+            }
+        }
     </style>
 </head>
 
 <body
-    class="bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 font-sans h-screen flex flex-col overflow-hidden transition-colors duration-200">
-
+    class="bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 font-sans h-[100dvh] flex flex-col overflow-hidden transition-colors duration-200">
     <nav
-        class="pt-[calc(0.75rem+env(safe-area-inset-top))] bg-white dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-800 p-3 shadow-sm dark:shadow-md z-50 shrink-0 transition-colors duration-200">
-        <div class="flex justify-between items-center h-10 max-w-7xl mx-auto w-full">
-            <div class="flex items-center">
-                <a href="/"
-                    class="flex items-center justify-center p-2 rounded-full hover:bg-zinc-200 dark:hover:bg-zinc-800 transition text-zinc-600 dark:text-zinc-400">
-                    <i class="ph ph-house text-xl"></i></a>
-            </div>
+        class="pt-[calc(0.75rem+env(safe-area-inset-top))] bg-zinc-50 dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-800 pb-3 shadow-sm dark:shadow-md z-50 shrink-0 transition-colors duration-200">
+        <div class="flex justify-between h-10 max-w-4xl mx-auto w-full pr-3 pl-3">
+            <a href="/"
+                class="h-10 w-10 flex items-center justify-center p-2 rounded-full hover:bg-zinc-200 dark:hover:bg-zinc-800 transition text-zinc-600 dark:text-zinc-400">
+                <i class="ph ph-house text-xl"></i></a>
 
-            <div class="text-center absolute left-1/2 -translate-x-1/2">
+            <div class="self-center text-center absolute left-1/2 -translate-x-1/2">
                 <h1 class="text-base font-bold text-zinc-800 dark:text-white truncate max-w-[150px] md:max-w-xs"
                     id="navTitle">{{ t.name }}</h1>
             </div>
-            <div id="authSection" class="flex items-center gap-1"></div>
+            <div id="authSection" class="flex gap-1"></div>
 
         </div>
         <div class="hidden md:flex justify-center mt-2">
             <div class="flex bg-zinc-100 dark:bg-zinc-950 rounded p-1 border border-gray-200 dark:border-zinc-800">
                 <button onclick="setView('bracket')" id="btn-bracket-d"
-                    class="px-6 py-1.5 rounded text-sm font-medium transition bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm border border-gray-200 dark:border-transparent">Bracket</button>
+                    class="px-6 py-1.5 rounded text-sm font-medium transition text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white">Bracket</button>
                 <button onclick="setView('schedule')" id="btn-schedule-d"
                     class="px-6 py-1.5 rounded text-sm font-medium transition text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white">Schedule</button>
             </div>
@@ -158,7 +162,7 @@
 
     <main class="flex-1 overflow-hidden relative bg-zinc-50 dark:bg-zinc-950 transition-colors duration-200">
         <div id="view-bracket"
-            class="w-full h-full overflow-auto bg-[radial-gradient(#b2b2b2_1px,transparent_1px)] dark:bg-[radial-gradient(#202020_1px,transparent_1px)] [background-size:20px_20px] pt-8 pb-20">
+            class="w-full h-full overflow-auto bg-[radial-gradient(#b2b2b2_1px,transparent_1px)] dark:bg-[radial-gradient(#202020_1px,transparent_1px)] [background-size:20px_20px] pt-8">
             <div class="bracket-wrapper" id="bracketRoot"><svg id="connections"></svg></div>
         </div>
         <div id="view-schedule" class="hidden w-full h-full overflow-auto p-4 md:p-8">
@@ -201,7 +205,7 @@
     <div
         class="fixed bottom-0 left-0 w-full z-50 bg-white dark:bg-zinc-900 border-t border-gray-200 dark:border-zinc-800 flex h-14 pb-[env(safe-area-inset-bottom)] md:hidden transition-colors duration-200">
         <button onclick="setView('bracket')" id="btn-bracket-m"
-            class="flex-1 flex flex-col items-center justify-center text-orange-500 hover:text-orange-600 dark:hover:text-orange-400 text-[0.7rem] font-bold uppercase tracking-wider transition-all duration-200 active">
+            class="flex-1 flex flex-col items-center justify-center text-zinc-400 dark:text-zinc-500 hover:text-orange-500 dark:hover:text-orange-400 text-[0.7rem] font-bold uppercase tracking-wider transition-all duration-200">
             <i class="ph ph-tree-structure text-xl mb-0.5"></i> Bracket
         </button>
         <button onclick="setView('schedule')" id="btn-schedule-m"
@@ -277,7 +281,7 @@
             <div id="settingsError"
                 class="hidden text-xs text-red-500 dark:text-red-400 text-center mb-4 bg-red-50 dark:bg-red-900/10 p-2 rounded border border-red-200 dark:border-red-900/30">
             </div>
-            <div class="space-y-4">
+            <div class="space-y-2">
                 <div><label class="text-xs font-bold text-zinc-500 uppercase">Name</label><input type="text"
                         enterkeyhint="next"
                         onkeydown="if(event.key==='Enter') document.getElementById('settingDuration').focus()"
@@ -304,20 +308,28 @@
                         id="settingCourts"
                         class="w-full bg-zinc-50 dark:bg-zinc-950 border border-gray-300 dark:border-zinc-800 rounded p-3 focus:border-orange-500 outline-none transition text-zinc-900 dark:text-white">
                 </div>
-                <div class="pt-4 border-t border-gray-200 dark:border-zinc-800"><button onclick="recalculateSchedule()"
-                        class="w-full bg-blue-600 hover:bg-blue-500 py-2.5 rounded-lg font-bold flex items-center justify-center gap-2 transition text-sm text-white"><i
-                            class="ph ph-arrows-clockwise"></i> Recalculate Schedule</button></div>
-                <div class="pt-4 border-t border-gray-200 dark:border-zinc-800"><label
-                        class="block text-xs font-bold text-red-500 dark:text-red-400 uppercase mb-2">Update Teams
+                <div><label class="block text-xs font-bold text-red-500 dark:text-red-400 uppercase mb-2">Teams
                         (Resets Bracket!)</label><textarea id="settingTeams"
-                        class="w-full h-48 bg-zinc-50 dark:bg-zinc-950 border border-red-200 dark:border-red-900/30 rounded p-3 text-sm font-mono focus:border-red-500 outline-none transition text-zinc-900 dark:text-white"></textarea>
+                        class="w-full h-34 bg-zinc-50 dark:bg-zinc-950 border border-red-200 dark:border-red-900/30 rounded p-3 text-sm font-mono focus:border-red-500 outline-none transition text-zinc-900 dark:text-white"></textarea>
                 </div>
             </div>
-            <div class="flex justify-between mt-6 pt-6 border-t border-gray-200 dark:border-zinc-800"><button
-                    onclick="deleteTournament()" class="text-red-500 text-sm hover:underline">Delete
-                    Tournament</button><button onclick="saveSettings()"
-                    class="bg-orange-600 hover:bg-orange-500 px-6 py-2 rounded-lg font-bold transition text-white">Save
-                    Changes</button></div>
+            <div class="mt-3 pt-3 border-t border-gray-200 dark:border-zinc-800">
+                <!-- <div class="mb-4">
+                    <button onclick="recalculateSchedule()"
+                        class="w-full bg-blue-600 hover:bg-blue-500 py-2.5 rounded-lg font-bold flex items-center justify-center gap-2 transition text-sm text-white">
+                        <i class="ph ph-arrows-clockwise"></i> Recalculate Schedule
+                    </button>
+                </div> -->
+                <div class="flex justify-between">
+                    <button onclick="deleteTournament()" class="text-red-500 text-sm hover:underline">
+                        Delete Tournament
+                    </button>
+                    <button onclick="saveSettings()"
+                        class="bg-orange-600 hover:bg-orange-500 px-6 py-2 rounded-lg font-bold transition text-white">
+                        Save Changes
+                    </button>
+                </div>
+            </div>
         </div>
     </dialog>
 
@@ -347,8 +359,15 @@
         </div>
     </dialog>
 
+    <!-- DATA INJECTION FOR LINTER COMPLIANCE -->
+    <script type="application/json" id="tournament-data">{{ t|tojson|safe }}</script>
+    <script type="application/json" id="schedule-data">{{ schedule|tojson|safe }}</script>
+
     <script>
-        const TOURNAMENT = {{ t| tojson }}; let SCHEDULE_DATA = {{ schedule| tojson }}; let activeMatchId = null; let isAdmin = false; const T_ID = "{{ t.id }}";
+        const TOURNAMENT = JSON.parse(document.getElementById('tournament-data').textContent);
+        let SCHEDULE_DATA = JSON.parse(document.getElementById('schedule-data').textContent);
+
+        let activeMatchId = null; let isAdmin = false; const T_ID = TOURNAMENT.id;
         const COURT_COLORS = ['#ea580c', '#0284c7', '#059669', '#ca8a04', '#dc2626', '#0891b2', '#e11d48', '#65a30d'];
         function stringToColor(str) { let hash = 0; for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash); return COURT_COLORS[Math.abs(hash) % COURT_COLORS.length]; }
         let lastDataString = "";
@@ -388,8 +407,8 @@
         async function checkAuth() { isAdmin = (await (await fetch('/api/check-auth')).json()).is_admin; renderAuthUI(); }
         function renderAuthUI() {
             const c = document.getElementById('authSection');
-            if (isAdmin) { c.innerHTML = `<button onclick="openSettings()" class="flex items-center justify-center p-2 rounded-full hover:bg-zinc-200 dark:hover:bg-zinc-800 transition text-zinc-600 dark:text-zinc-400"><i class="ph ph-gear text-xl"></i></button><button onclick="logout()" class="flex items-center justify-center p-2 rounded-full hover:bg-zinc-200 dark:hover:bg-zinc-800 transition text-zinc-600 dark:text-zinc-400"><i class="ph ph-sign-out text-xl"></i></button>`; document.getElementById('refAuthSection').classList.add('hidden'); }
-            else { c.innerHTML = `<button onclick="document.getElementById('loginModal').showModal()" class="flex items-center justify-center p-2 rounded-full hover:bg-zinc-200 dark:hover:bg-zinc-800 transition text-zinc-600 dark:text-zinc-400"><i class="ph ph-lock-key text-xl"></i></button>`; document.getElementById('refAuthSection').classList.remove('hidden'); }
+            if (isAdmin) { c.innerHTML = `<button onclick="openSettings()" class="h-10 w-10 flex items-center justify-center p-2 rounded-full hover:bg-zinc-200 dark:hover:bg-zinc-800 transition text-zinc-600 dark:text-zinc-400"><i class="ph ph-gear text-xl"></i></button><button onclick="logout()" class="h-10 w-10 flex items-center justify-center p-2 rounded-full hover:bg-zinc-200 dark:hover:bg-zinc-800 transition text-zinc-600 dark:text-zinc-400"><i class="ph ph-sign-out text-xl"></i></button>`; document.getElementById('refAuthSection').classList.add('hidden'); }
+            else { c.innerHTML = `<button onclick="document.getElementById('loginModal').showModal()" class="h-10 w-10 flex items-center justify-center p-2 rounded-full hover:bg-zinc-200 dark:hover:bg-zinc-800 transition text-zinc-600 dark:text-zinc-400"><i class="ph ph-lock-key text-xl"></i></button>`; document.getElementById('refAuthSection').classList.remove('hidden'); }
         }
         async function performLogin() { if ((await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: document.getElementById('loginUser').value, password: document.getElementById('loginPass').value }) })).ok) location.reload(); else document.getElementById('loginError').classList.remove('hidden'); }
         async function logout() { await fetch('/api/logout', { method: 'POST' }); location.reload(); }
@@ -427,7 +446,7 @@
         function createCard(m) {
             const div = document.createElement('div'); div.id = `match-${m.id}`; if (!m.number) div.classList.add('invisible-card');
             const color = m.time ? stringToColor(m.court + 'salt') : 'transparent';
-            div.className = `match-card w-64 bg-white dark:bg-zinc-900 rounded-xl border border-gray-400 cursor-pointer select-none relative overflow-hidden group ${!m.number ? 'invisible-card' : ''} ${m.winner ? 'border-orange-400 dark:border-orange-800 ring-2 ring-orange-500/40' : 'dark:border-zinc-800'}`;
+            div.className = `match-card w-64 bg-white dark:bg-zinc-900 rounded-xl border border-gray-400 cursor-pointer select-none relative overflow-hidden group ${!m.number ? 'invisible-card' : ''} ${m.winner ? 'border-orange-400 dark:border-orange-600 ring-1 ring-orange-400 dark:ring-orange-600' : 'dark:border-zinc-700'}`;
             div.onclick = () => { if (m.p1 && m.p2) openScore(m.id); };
             const status = m.winner ? '<span class="text-orange-500 font-bold text-xs"><i class="ph ph-check"></i> Played</span>' : (m.status === 'Scheduled' ? `<span class="text-zinc-800 dark:text-white font-bold text-xs font-mono">${m.time}</span>` : '<span class="text-zinc-400 dark:text-zinc-600 text-xs">Pending</span>');
             const courtName = m.time ? m.court : '';
@@ -492,21 +511,24 @@
 
             // Desktop
             document.querySelectorAll('#btn-bracket-d, #btn-schedule-d').forEach(b => {
-                b.classList.remove('bg-white', 'dark:bg-zinc-800', 'text-zinc-900', 'dark:text-white', 'shadow-sm', 'border', 'border-gray-200', 'dark:border-transparent');
+                b.classList.remove('bg-orange-600', 'dark:bg-orange-700', 'text-zinc-50', 'dark:text-white', 'shadow-sm', 'border', 'border-gray-200', 'dark:border-transparent');
                 b.classList.add('text-zinc-500', 'dark:text-zinc-400');
             });
+
+            'bg-orange-600', 'dark:bg-orange-700'
+
             const dBtn = document.getElementById('btn-' + view + '-d');
-            dBtn.classList.add('bg-white', 'dark:bg-zinc-800', 'text-zinc-900', 'dark:text-white', 'shadow-sm', 'border', 'border-gray-200', 'dark:border-transparent');
+            dBtn.classList.add('bg-orange-600', 'dark:bg-orange-700', 'text-zinc-50', 'dark:text-white', 'shadow-sm', 'border', 'border-gray-200', 'dark:border-transparent');
             dBtn.classList.remove('text-zinc-500', 'dark:text-zinc-400');
 
             // Mobile
             document.querySelectorAll('#btn-bracket-m, #btn-schedule-m').forEach(b => {
-                b.classList.remove('text-orange-500', 'border-t-2', 'border-orange-500', 'bg-zinc-50', 'dark:bg-zinc-800');
-                b.classList.add('text-zinc-500');
+                b.classList.remove('text-orange-600', 'dark:text-orange-500', 'border-t-2', 'border-orange-500', 'bg-zinc-50', 'dark:bg-zinc-800');
+                b.classList.add('text-zinc-400', 'dark:text-zinc-500');
             });
             const mBtn = document.getElementById('btn-' + view + '-m');
-            mBtn.classList.add('text-orange-500', 'border-t-2', 'border-orange-500', 'bg-zinc-50', 'dark:bg-zinc-800');
-            mBtn.classList.remove('text-zinc-500');
+            mBtn.classList.add('text-orange-600', 'dark:text-orange-500', 'border-t-2', 'border-orange-500', 'bg-zinc-50', 'dark:bg-zinc-800');
+            mBtn.classList.remove('text-zinc-400', 'dark:text-zinc-500');
 
             if (view === 'bracket') setTimeout(drawConnections, 50);
         }

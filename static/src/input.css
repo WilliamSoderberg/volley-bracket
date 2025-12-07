@@ -1,16 +1,9 @@
-/* 1. Import the full framework */
 @import "tailwindcss";
 
-/* 2. Configure Content Sources (CRITICAL: Use glob patterns)
-   These paths are relative to THIS css file. */
 @source "../../templates/**/*.html";
 @source "../../static/**/*.js";
 
-/* 3. Force Dark Mode 'Class' Strategy 
-   This tells Tailwind: "Apply dark styles when the .dark class is present on a parent"
-   This overrides the default system-preference media query. */
 @variant dark (&:where(.dark, .dark *));
-
 
 @theme {
    --color-zinc-950: #000;
