@@ -30,14 +30,7 @@
                     <p class="text-zinc-500 dark:text-zinc-400">Tournament Organizer</p>
                 </div>
             </div>
-
-            <div class="flex items-center gap-4">
-                <button onclick="toggleTheme()"
-                    class="flex items-center justify-center p-2 rounded-full hover:bg-zinc-200 dark:hover:bg-zinc-800 transition text-zinc-600 dark:text-zinc-400">
-                    <i id="themeIcon" class="ph ph-moon text-xl"></i>
-                </button>
-                <div id="authControls"></div>
-            </div>
+            <div id="authControls"></div>
         </header>
 
         <!-- Main Actions Row -->
@@ -79,52 +72,69 @@
         </div>
     </div>
 
+    <button onclick="toggleTheme()"
+        class="flex items-center justify-center fixed z-50 right-4 bottom-6 bg-zinc-800 dark:bg-white text-white dark:text-zinc-900 p-3 rounded-full shadow-lg hover:scale-110 transition-transform duration-200 border border-zinc-700 dark:border-zinc-300 focus:outline-none focus:ring-2 focus:ring-orange-500"
+        aria-label="Toggle Theme">
+        <i id="themeIcon" class="ph ph-moon text-xl block"></i>
+    </button>
+
     <!-- Create Modal -->
     <dialog id="createModal"
-        class="bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white rounded-xl shadow-2xl backdrop:bg-black/60 p-0 w-full max-w-lg m-auto border border-gray-200 dark:border-zinc-700">
+        class="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white rounded-xl shadow-2xl backdrop:bg-black/60 p-0 w-full max-w-lg m-auto border border-gray-200 dark:border-zinc-700">
         <form action="/create" method="POST" class="p-6">
-            <h2 class="text-2xl font-bold mb-6 flex items-center gap-2"><i
-                    class="ph ph-plus-circle text-orange-500"></i> New Tournament</h2>
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold flex items-center gap-2"><i class="ph ph-plus-circle text-orange-500"></i>
+                    New Tournament</h2>
+                <button aria-label="Close score dialog" type="button"
+                    onclick="document.getElementById('createModal').close()"
+                    class="text-zinc-400 hover:text-zinc-900 dark:hover:text-white"><i
+                        class="ph ph-x text-xl"></i></button>
+            </div>
             <div class="space-y-4">
                 <div><label class="block text-sm font-bold mb-1 text-zinc-500 uppercase text-xs">Name</label><input
-                        type="text" name="name" placeholder="My Awesome Tournament" required
-                        class="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-300 dark:border-zinc-600 rounded p-2 focus:border-orange-500 outline-none">
+                        type="text" name="name" placeholder="My Awesome Tournament" required enterkeyhint="next"
+                        onkeydown="if(event.key==='Enter'){event.preventDefault(); document.getElementById('tournamentCode').focus();}"
+                        class="w-full bg-gray-50 dark:bg-zinc-950 border border-gray-300 dark:border-zinc-600 rounded p-2 focus:border-orange-500 outline-none">
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div><label class="block text-sm font-bold mb-1 text-zinc-500 uppercase text-xs">Code</label><input
-                            type="text" name="code" placeholder="••••" value="1234" required
-                            class="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-300 dark:border-zinc-600 rounded p-2 text-center font-mono">
+                            type="text" name="code" placeholder="••••" required id="tournamentCode" enterkeyhint="next"
+                            onkeydown="if(event.key==='Enter'){event.preventDefault(); document.getElementById('createType').focus();}"
+                            class="w-full h-10 bg-gray-50 dark:bg-zinc-950 border border-gray-300 dark:border-zinc-600 rounded p-2 text-center font-mono">
                     </div>
                     <div><label class="block text-sm font-bold mb-1 text-zinc-500 uppercase text-xs">Type</label><select
-                            name="type"
-                            class="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-300 dark:border-zinc-600 rounded p-2">
+                            name="type" id="createType" enterkeyhint="next"
+                            onkeydown="if(event.key==='Enter'){event.preventDefault(); document.getElementById('teams').focus();}"
+                            class="w-full h-10 bg-gray-50 dark:bg-zinc-950 border border-gray-300 dark:border-zinc-600 rounded p-2">
                             <option value="double">Double Elimination</option>
                             <option value="single">Single Elimination</option>
                         </select></div>
                 </div>
-                <div><label class="block text-sm font-bold mb-1 text-zinc-500 uppercase text-xs">Teams (One per
-                        line)</label><textarea name="teams" required
-                        class="w-full h-32 bg-gray-50 dark:bg-zinc-900 border border-gray-300 dark:border-zinc-600 rounded p-2 font-mono text-sm focus:border-orange-500 outline-none"></textarea>
+                <div><label class="block text-sm font-bold mb-1 text-zinc-500 uppercase text-xs">Teams</label><textarea
+                        name="teams" placeholder="One team per line..." required id="teams"
+                        class="w-full h-48 bg-gray-50 dark:bg-zinc-950 border border-gray-300 dark:border-zinc-600 rounded p-2 font-mono text-sm focus:border-orange-500 outline-none"></textarea>
                 </div>
                 <div><label class="block text-sm font-bold mb-1 text-zinc-500 uppercase text-xs">Courts</label><input
                         type="text" name="courts" placeholder="Center Court, Court 1" required
-                        class="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-300 dark:border-zinc-600 rounded p-2 focus:border-orange-500 outline-none">
+                        onkeydown="if(event.key==='Enter'){event.preventDefault(); document.getElementById('createDuration').focus();}"
+                        class="w-full bg-gray-50 dark:bg-zinc-950 border border-gray-300 dark:border-zinc-600 rounded p-2 focus:border-orange-500 outline-none">
                 </div>
                 <div class="grid grid-cols-2 gap-4">
-                    <div><label class="block text-sm font-bold mb-1 text-zinc-500 uppercase text-xs">Duration
-                            (mins)</label><input type="number" name="duration" value="30"
-                            class="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-300 dark:border-zinc-600 rounded p-2">
+                    <div><label class="block text-sm font-bold mb-1 text-zinc-500 uppercase text-xs">Match
+                            Duration</label><input type="number" pattern="[0-9]*" min="0" name="duration" value="30"
+                            id="createDuration" enterkeyhint="next"
+                            onkeydown="if(event.key==='Enter'){event.preventDefault(); document.getElementById('createStartTime').focus();}"
+                            class="w-full bg-gray-50 dark:bg-zinc-950 border border-gray-300 dark:border-zinc-600 rounded p-2 h-10 text-base appearance-none">
                     </div>
-                    <div><label class="block text-sm font-bold mb-1 text-zinc-500 uppercase text-xs">Start</label><input
-                            type="time" name="start_time" value="10:00"
-                            class="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-300 dark:border-zinc-600 rounded p-2">
+                    <div><label class="block text-sm font-bold mb-1 text-zinc-500 uppercase text-xs">Start
+                            Time</label><input type="time" name="start_time" value="10:00" id="createStartTime"
+                            enterkeyhint="done"
+                            class="w-full bg-gray-50 dark:bg-zinc-950 border border-gray-300 dark:border-zinc-600 rounded p-2 h-10 text-base appearance-none">
                     </div>
                 </div>
             </div>
             <div class="mt-8 flex justify-end gap-3 border-t border-gray-200 dark:border-zinc-700 pt-4">
-                <button type="button" onclick="document.getElementById('createModal').close()"
-                    class="px-4 py-2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">Cancel</button>
-                <button type="submit"
+                <button type="submit" id="submitCreate"
                     class="bg-orange-600 hover:bg-orange-500 text-white px-6 py-2 rounded font-bold shadow-lg shadow-orange-900/20">Create
                     Tournament</button>
             </div>
@@ -142,10 +152,11 @@
             <div id="loginError" class="hidden text-xs text-red-500 text-center mb-3">Invalid Credentials</div>
             <input id="loginUser"
                 class="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-300 dark:border-zinc-600 rounded p-3 mb-3 focus:border-orange-500 outline-none transition"
-                placeholder="Username" onkeydown="if(event.key==='Enter') performLogin()">
+                placeholder="Username" enterkeyhint="next"
+                onkeydown="if(event.key==='Enter') document.getElementById('loginPass').focus()">
             <input type="password" id="loginPass"
                 class="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-300 dark:border-zinc-600 rounded p-3 mb-6 focus:border-orange-500 outline-none transition"
-                placeholder="Password" onkeydown="if(event.key==='Enter') performLogin()">
+                placeholder="Password" enterkeyhint="done" onkeydown="if(event.key==='Enter') performLogin()">
             <div class="flex justify-between items-center">
                 <form method="dialog"><button
                         class="px-3 py-1 text-zinc-400 text-sm hover:text-zinc-600 dark:hover:text-white">Cancel</button>
@@ -170,8 +181,8 @@
                 document.getElementById('themeIcon').className = 'ph ph-moon text-xl';
             }
         }
-        // Set init icon
         document.getElementById('themeIcon').className = document.documentElement.classList.contains('dark') ? 'ph ph-moon text-xl' : 'ph ph-sun text-xl';
+
 
         async function checkAuth() {
             const res = await fetch('/api/check-auth');

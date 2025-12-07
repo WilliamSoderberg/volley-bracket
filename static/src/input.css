@@ -11,11 +11,7 @@
    This overrides the default system-preference media query. */
 @variant dark (&:where(.dark, .dark *));
 
-/* 4. Theme Customizations */
-@theme {
-    /* Ensure orange colors match your expectations */
-    --color-orange-500: #f97316;
-    --color-orange-600: #ea580c;
 
-    /* Define other custom variables if needed */
+@theme {
+   --color-zinc-950: #000;
 }
