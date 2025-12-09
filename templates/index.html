@@ -159,19 +159,13 @@
             }
         }
 
-        // UNIFIED MODAL LOGIC
         function openTournamentModal(mode, id) {
             const modal = document.getElementById('tournamentModal');
             document.getElementById('tmError').classList.add('hidden');
-
-            // Set fields based on mode
             if (mode === 'create') {
                 document.getElementById('modalTitle').innerHTML = `<i class="ph ph-plus-circle text-orange-500"></i> New Tournament`;
                 document.getElementById('submitBtn').innerText = 'Create';
                 document.getElementById('deleteBtn').classList.add('hidden');
-                document.getElementById('recalculateSection').classList.add('hidden');
-
-                // Clear fields
                 document.getElementById('tmId').value = '';
                 document.getElementById('tmMode').value = 'create';
                 document.getElementById('tmName').value = '';
@@ -186,9 +180,6 @@
                 document.getElementById('modalTitle').innerHTML = `<i class="ph ph-sliders text-orange-500"></i> Settings`;
                 document.getElementById('submitBtn').innerText = 'Save Changes';
                 document.getElementById('deleteBtn').classList.remove('hidden');
-                document.getElementById('recalculateSection').classList.remove('hidden');
-
-                // Fill fields
                 document.getElementById('tmId').value = id;
                 document.getElementById('tmMode').value = 'edit';
                 document.getElementById('tmName').value = t.name;
@@ -203,9 +194,18 @@
             modal.showModal();
         }
 
-        async function submitTournament() {
+        async function submitTournament(event) {
+            event.preventDefault();
             const mode = document.getElementById('tmMode').value;
             const id = document.getElementById('tmId').value;
+            const tmTeamsVal = document.getElementById('tmTeams').value;
+            const teamCount = tmTeamsVal.split('\n').filter(t => t.trim().length > 0).length;
+            if (teamCount < 2) {
+                const errBox = document.getElementById('tmError');
+                errBox.innerText = "You need at least 2 teams to create a tournament.";
+                errBox.classList.remove('hidden');
+                return;
+            }
 
             const payload = {
                 name: document.getElementById('tmName').value,
@@ -215,7 +215,7 @@
                 courts: document.getElementById('tmCourts').value,
                 duration: document.getElementById('tmDuration').value,
                 start_time: document.getElementById('tmStartTime').value,
-                teams: document.getElementById('tmTeams').value
+                teams: tmTeamsVal
             };
 
             let url = '/create';
@@ -240,11 +240,6 @@
         function openDashboardSettings(id, event) {
             event.preventDefault(); event.stopPropagation();
             openTournamentModal('edit', id);
-        }
-
-        async function recalculateSchedule() {
-            const id = document.getElementById('tmId').value;
-            if ((await fetch(`/api/settings/${id}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ recalculate: true }) })).ok) { location.reload(); }
         }
 
         async function deleteTournament() {

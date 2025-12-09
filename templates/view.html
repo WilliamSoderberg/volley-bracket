@@ -406,7 +406,7 @@
         const COURT_COLORS = ['#ea580c', '#0284c7', '#059669', '#ca8a04', '#dc2626', '#0891b2', '#e11d48', '#65a30d'];
         function stringToColor(str) { let hash = 0; for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash); return COURT_COLORS[Math.abs(hash) % COURT_COLORS.length]; }
         let lastDataString = "";
-        let currentView = 'bracket'; // Default view
+        let currentView = localStorage.getItem('volleyView') || 'bracket';
 
         document.getElementById('themeIcon').className = document.documentElement.classList.contains('dark') ? 'ph ph-moon text-xl' : 'ph ph-sun text-xl';
 
@@ -456,7 +456,6 @@
             document.getElementById('modalTitle').innerHTML = `<i class="ph ph-sliders text-orange-500"></i> Settings`;
             document.getElementById('submitBtn').innerText = 'Save Changes';
             document.getElementById('deleteBtn').classList.remove('hidden');
-            document.getElementById('recalculateSection').classList.remove('hidden');
             document.getElementById('tmId').value = data.id || T_ID;
             document.getElementById('tmMode').value = 'edit';
             document.getElementById('tmName').value = data.name;
@@ -470,8 +469,18 @@
             modal.showModal();
         }
 
-        async function submitTournament() {
+        async function submitTournament(event) {
+            event.preventDefault();
             const id = document.getElementById('tmId').value;
+            const tmTeamsVal = document.getElementById('tmTeams').value;
+            const teamCount = tmTeamsVal.split('\n').filter(t => t.trim().length > 0).length;
+            if (teamCount < 2) {
+                const errBox = document.getElementById('tmError');
+                errBox.innerText = "You need at least 2 teams to create a bracket.";
+                errBox.classList.remove('hidden');
+                return;
+            }
+
             const payload = {
                 name: document.getElementById('tmName').value,
                 date: document.getElementById('tmDate').value,
@@ -480,13 +489,12 @@
                 courts: document.getElementById('tmCourts').value,
                 duration: document.getElementById('tmDuration').value,
                 start_time: document.getElementById('tmStartTime').value,
-                teams: document.getElementById('tmTeams').value
+                teams: tmTeamsVal
             };
             const res = await fetch(`/api/settings/${id}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
             if (res.ok) location.reload(); else { const err = await res.json(); document.getElementById('tmError').innerText = err.error; document.getElementById('tmError').classList.remove('hidden'); }
         }
 
-        async function recalculateSchedule() { const id = document.getElementById('tmId').value; if ((await fetch(`/api/settings/${id}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ recalculate: true }) })).ok) { location.reload(); } }
         async function deleteTournament() { const id = document.getElementById('tmId').value; if (confirm("Are you sure?")) { if ((await fetch(`/api/delete/${id}`, { method: 'POST' })).ok) window.location.href = '/'; } }
 
         function renderScheduleTable() {
@@ -604,17 +612,28 @@
             if (currentView === 'bracket') {
                 // Switch to Schedule
                 currentView = 'schedule';
+                localStorage.setItem('volleyView', 'schedule');
                 document.getElementById('view-bracket').classList.add('hidden');
                 document.getElementById('view-schedule').classList.remove('hidden');
-                document.getElementById('viewIcon').className = 'ph ph-tree-structure text-xl block'; // Show tree icon to go back
+                document.getElementById('viewIcon').className = 'ph ph-tree-structure text-xl block';
             } else {
                 // Switch to Bracket
                 currentView = 'bracket';
+                localStorage.setItem('volleyView', 'bracket');
                 document.getElementById('view-schedule').classList.add('hidden');
                 document.getElementById('view-bracket').classList.remove('hidden');
-                document.getElementById('viewIcon').className = 'ph ph-calendar-dots text-xl block'; // Show list icon to go to schedule
+                document.getElementById('viewIcon').className = 'ph ph-calendar-dots text-xl block';
                 setTimeout(drawConnections, 50);
             }
+        }
+
+        // Apply view on load without flipping it
+        if (currentView === 'schedule') {
+            document.getElementById('view-bracket').classList.add('hidden');
+            document.getElementById('view-schedule').classList.remove('hidden');
+            document.getElementById('viewIcon').className = 'ph ph-tree-structure text-xl block';
+        } else {
+            setTimeout(drawConnections, 50);
         }
 
         function drawConnections() {
@@ -634,9 +653,7 @@
             path.setAttribute("d", `M ${sx} ${sy} C ${c1} ${sy}, ${c1} ${ey}, ${ex} ${ey}`); svg.appendChild(path);
         }
 
-        checkAuth(); fetchTournamentData();
-        // Init logic for view
-        if (currentView === 'bracket') setTimeout(drawConnections, 50);
+        checkAuth(); fetchTournamentData(); 
     </script>
 </body>
 

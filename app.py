@@ -534,6 +534,12 @@ def create_tournament():
         return jsonify({"error": "Unauthorized"}), 403
     data = request.get_json(silent=True) or request.form
     teams = [t.strip() for t in data.get("teams", "").split("\n") if t.strip()]
+    if len(teams) < 2:
+        return (
+            jsonify({"error": "At least 2 teams are required to create a tournament."}),
+            400,
+        )
+
     courts = [c.strip() for c in data.get("courts", "").split(",") if c.strip()]
     t_id = str(uuid.uuid4())[:8]
     t_date = data.get("date") or datetime.now().strftime("%Y-%m-%d")
@@ -635,38 +641,36 @@ def settings(t_id):
     data = request.json
     if not t:
         return jsonify({"error": "Tournament not found"}), 404
-    if data.get("recalculate"):
-        update_schedule(t)
-        save_tournament(t)
-        return jsonify({"status": "ok"})
 
-    should_reschedule = False
-    if "name" in data:
-        t.name = data["name"]
-    if "date" in data:
-        t.date = data["date"]
-    if "code" in data:
-        t.code = data["code"]
-    if "courts" in data:
-        t.courts = [c.strip() for c in data["courts"].split(",") if c.strip()]
-        should_reschedule = True
-    if "start_time" in data:
-        t.start_time = data["start_time"]
-        should_reschedule = True
-    if "match_duration" in data:
-        t.match_duration = int(data["match_duration"])
-        should_reschedule = True
+    old_type = t.type
+    old_teams = t.teams
 
-    if "teams" in data and data["teams"]:
-        new_teams = [x.strip() for x in data["teams"].split("\n") if x.strip()]
-        if new_teams != t.teams and len(new_teams) > 1:
-            t.teams = new_teams
-            t.matches = generate_structure(new_teams, t.type)
-            refresh_bracket(t)
-            should_reschedule = True
+    new_teams = [
+        x.strip() for x in data.get("teams", "").split("\n") or t.teams if x.strip()
+    ]
+    if len(new_teams) < 2:
+        return (
+            jsonify({"error": "At least 2 teams are required to generate a bracket."}),
+            400,
+        )
 
-    if should_reschedule:
-        update_schedule(t)
+    if new_teams != t.teams:
+        t.teams = new_teams
+
+    # Update metadata
+    t.name = data.get("name", t.name)
+    t.date = data.get("date", t.date)
+    t.code = data.get("code", t.code)
+    t.type = data.get("type", t.type)
+    t.courts = [c.strip() for c in data["courts"].split(",") if c.strip()]
+    t.start_time = data.get("start_time", t.start_time)
+    t.match_duration = int(data.get("duration", t.match_duration))
+
+    if old_teams != t.teams or old_type != t.type or data.get("recalculate"):
+        t.matches = generate_structure(new_teams, t.type)
+        refresh_bracket(t)
+
+    update_schedule(t)
     save_tournament(t)
     return jsonify({"status": "ok"})
 
