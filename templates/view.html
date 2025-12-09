@@ -88,7 +88,6 @@
             z-index: 0;
         }
 
-        /* Dynamic Stroke Color for Lines */
         path {
             fill: none;
             stroke: oklch(27.4% 0.006 286.033);
@@ -96,12 +95,9 @@
             opacity: 0.5;
         }
 
-        /* Light mode stroke */
         .dark path {
             stroke: oklch(70.5% 0.015 286.067);
         }
-
-        /* Dark mode stroke */
 
         .match-card {
             transition: all 0.2s;
@@ -113,6 +109,10 @@
 
         .invisible-card {
             display: none;
+        }
+
+        body {
+            padding-top: env(safe-area-inset-top);
         }
 
         body:has(dialog[open]) {
@@ -196,12 +196,6 @@
         </div>
     </main>
 
-    <button onclick="toggleTheme()"
-        class="flex items-center justify-center fixed z-50 right-4 bottom-20 md:bottom-6 bg-zinc-800 dark:bg-white text-white dark:text-zinc-900 p-3 rounded-full shadow-lg hover:scale-110 transition-transform duration-200 border border-zinc-700 dark:border-zinc-300 focus:outline-none focus:ring-2 focus:ring-orange-500"
-        aria-label="Toggle Theme">
-        <i id="themeIcon" class="ph ph-moon text-xl block"></i>
-    </button>
-
     <div
         class="fixed bottom-0 left-0 w-full z-50 bg-white dark:bg-zinc-900 border-t border-gray-200 dark:border-zinc-800 flex h-14 pb-[env(safe-area-inset-bottom)] md:hidden transition-colors duration-200">
         <button onclick="setView('bracket')" id="btn-bracket-m"
@@ -214,7 +208,11 @@
         </button>
     </div>
 
-    <!-- Modals -->
+    <!-- Shared Modals -->
+    {% include 'components/modals.html' %}
+    {% include 'components/theme.html' %}
+
+    <!-- View Specific Score Modal (Local) -->
     <dialog id="scoreModal"
         class="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white rounded-xl shadow-2xl backdrop:bg-black/20 dark:backdrop:bg-black/90 p-0 w-full max-w-md border border-gray-200 dark:border-zinc-700 m-auto transition-colors">
         <div class="p-6">
@@ -268,97 +266,6 @@
         </div>
     </dialog>
 
-    <dialog id="settingsModal"
-        class="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white rounded-xl shadow-2xl backdrop:bg-black/20 dark:backdrop:bg-black/90 p-0 w-full max-w-lg border border-gray-200 dark:border-zinc-700 m-auto">
-        <div class="p-6">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-xl font-bold flex items-center gap-2"><i class="ph ph-sliders text-orange-500"></i>
-                    Settings</h2>
-                <form method="dialog"><button
-                        class="focus-visible:outline-none text-zinc-400 hover:text-zinc-900 dark:hover:text-white"><i
-                            class="ph ph-x text-xl"></i></button></form>
-            </div>
-            <div id="settingsError"
-                class="hidden text-xs text-red-500 dark:text-red-400 text-center mb-4 bg-red-50 dark:bg-red-900/10 p-2 rounded border border-red-200 dark:border-red-900/30">
-            </div>
-            <div class="space-y-2">
-                <div><label class="text-xs font-bold text-zinc-500 uppercase">Name</label><input type="text"
-                        enterkeyhint="next"
-                        onkeydown="if(event.key==='Enter') document.getElementById('settingDuration').focus()"
-                        id="settingName"
-                        class="w-full bg-zinc-50 dark:bg-zinc-950 border border-gray-300 dark:border-zinc-800 rounded p-3 focus:border-orange-500 outline-none transition text-zinc-900 dark:text-white">
-                </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div><label class="block text-sm font-bold mb-1 text-zinc-500 uppercase text-xs">Match
-                            Duration</label><input type="number" pattern="[0-9]*" min="0" name="duration" value="30"
-                            id="settingDuration" enterkeyhint="next"
-                            onkeydown="if(event.key==='Enter') document.getElementById('settingStartTime').focus()"
-                            class="w-full h-10 bg-gray-50 dark:bg-zinc-950 border border-gray-300 dark:border-zinc-600 rounded p-2 h-10 text-base appearance-none">
-                    </div>
-                    <div><label class="block text-sm font-bold mb-1 text-zinc-500 uppercase text-xs">Start
-                            Time</label>
-                        <input id="settingStartTime" type="time" name="start_time" value="10:00" enterkeyhint="next"
-                            onkeydown="if(event.key==='Enter') document.getElementById('settingCourts').focus()"
-                            class="w-full bg-gray-50 dark:bg-zinc-950 border border-gray-300 dark:border-zinc-600 rounded p-2 h-10 text-base appearance-none" />
-                    </div>
-                </div>
-                <div><label class="text-xs font-bold text-zinc-500 uppercase">Courts</label><input type="text"
-                        enterkeyhint="next"
-                        onkeydown="if(event.key==='Enter') document.getElementById('settingTeams').focus()"
-                        id="settingCourts"
-                        class="w-full bg-zinc-50 dark:bg-zinc-950 border border-gray-300 dark:border-zinc-800 rounded p-3 focus:border-orange-500 outline-none transition text-zinc-900 dark:text-white">
-                </div>
-                <div><label class="block text-xs font-bold text-red-500 dark:text-red-400 uppercase mb-2">Teams
-                        (Resets Bracket!)</label><textarea id="settingTeams"
-                        class="w-full h-34 bg-zinc-50 dark:bg-zinc-950 border border-red-200 dark:border-red-900/30 rounded p-3 text-sm font-mono focus:border-red-500 outline-none transition text-zinc-900 dark:text-white"></textarea>
-                </div>
-            </div>
-            <div class="mt-3 pt-3 border-t border-gray-200 dark:border-zinc-800">
-                <!-- <div class="mb-4">
-                    <button onclick="recalculateSchedule()"
-                        class="w-full bg-blue-600 hover:bg-blue-500 py-2.5 rounded-lg font-bold flex items-center justify-center gap-2 transition text-sm text-white">
-                        <i class="ph ph-arrows-clockwise"></i> Recalculate Schedule
-                    </button>
-                </div> -->
-                <div class="flex justify-between">
-                    <button onclick="deleteTournament()" class="text-red-500 text-sm hover:underline">
-                        Delete Tournament
-                    </button>
-                    <button onclick="saveSettings()"
-                        class="bg-orange-600 hover:bg-orange-500 px-6 py-2 rounded-lg font-bold transition text-white">
-                        Save Changes
-                    </button>
-                </div>
-            </div>
-        </div>
-    </dialog>
-
-    <dialog id="loginModal"
-        class="bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white rounded-xl shadow-2xl backdrop:bg-black/60 p-0 w-80 m-auto border border-gray-200 dark:border-zinc-700">
-        <div class="p-6">
-            <div class="flex justify-center">
-                <div class="flex justify-between items-center bg-zinc-100 dark:bg-zinc-800 p-2 rounded-full"><i
-                        class="ph ph-lock-key text-2xl text-orange-500"></i></div>
-            </div>
-            <h2 class="text-lg font-bold mb-4 text-center">Admin Login</h2>
-            <div id="loginError" class="hidden text-xs text-red-500 text-center mb-3">Invalid Credentials</div>
-            <input id="loginUser"
-                class="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-300 dark:border-zinc-600 rounded p-3 mb-3 focus:border-orange-500 outline-none transition"
-                placeholder="Username" enterkeyhint="next"
-                onkeydown="if(event.key==='Enter') document.getElementById('loginPass').focus()">
-            <input type="password" id="loginPass"
-                class="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-300 dark:border-zinc-600 rounded p-3 mb-6 focus:border-orange-500 outline-none transition"
-                placeholder="Password" enterkeyhint="done" onkeydown="if(event.key==='Enter') performLogin()">
-            <div class="flex justify-between items-center">
-                <form method="dialog"><button
-                        class="px-3 py-1 text-zinc-400 text-sm hover:text-zinc-600 dark:hover:text-white">Cancel</button>
-                </form>
-                <button onclick="performLogin()"
-                    class="bg-orange-600 hover:bg-orange-500 text-white px-4 py-1 rounded font-bold">Login</button>
-            </div>
-        </div>
-    </dialog>
-
     <!-- DATA INJECTION FOR LINTER COMPLIANCE -->
     <script type="application/json" id="tournament-data">{{ t|tojson|safe }}</script>
     <script type="application/json" id="schedule-data">{{ schedule|tojson|safe }}</script>
@@ -372,29 +279,16 @@
         function stringToColor(str) { let hash = 0; for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash); return COURT_COLORS[Math.abs(hash) % COURT_COLORS.length]; }
         let lastDataString = "";
 
-        // TOGGLE THEME
-        function toggleTheme() {
-            const html = document.documentElement;
-            if (html.classList.contains('dark')) {
-                html.classList.remove('dark');
-                localStorage.theme = 'light';
-                document.getElementById('themeIcon').className = 'ph ph-sun text-xl';
-            } else {
-                html.classList.add('dark');
-                localStorage.theme = 'dark';
-                document.getElementById('themeIcon').className = 'ph ph-moon text-xl';
-            }
-        }
         document.getElementById('themeIcon').className = document.documentElement.classList.contains('dark') ? 'ph ph-moon text-xl' : 'ph ph-sun text-xl';
 
         async function fetchTournamentData() {
             try {
-                if (document.getElementById('scoreModal').open || document.getElementById('settingsModal').open || document.getElementById('loginModal').open) return;
+                if (document.getElementById('scoreModal').open || document.getElementById('tournamentModal').open || document.getElementById('loginModal').open) return;
                 const res = await fetch(`/api/t/${T_ID}`); const data = await res.json();
                 const currentDataString = JSON.stringify(data);
                 if (currentDataString === lastDataString) return;
                 lastDataString = currentDataString;
-                TOURNAMENT.matches = data.tournament.matches; TOURNAMENT.name = data.tournament.name; TOURNAMENT.courts = data.tournament.courts; TOURNAMENT.teams = data.tournament.teams; TOURNAMENT.start_time = data.tournament.start_time; TOURNAMENT.match_duration = data.tournament.match_duration; SCHEDULE_DATA = data.schedule;
+                TOURNAMENT.matches = data.tournament.matches; TOURNAMENT.name = data.tournament.name; TOURNAMENT.courts = data.tournament.courts; TOURNAMENT.teams = data.tournament.teams; TOURNAMENT.start_time = data.tournament.start_time; TOURNAMENT.match_duration = data.tournament.match_duration; TOURNAMENT.date = data.tournament.date; TOURNAMENT.type = data.tournament.type; TOURNAMENT.code = data.tournament.code; SCHEDULE_DATA = data.schedule;
                 document.getElementById('navTitle').innerText = TOURNAMENT.name;
                 const sx = document.getElementById('view-bracket').scrollLeft, sy = document.getElementById('view-bracket').scrollTop;
                 renderBracket(); renderScheduleTable();
@@ -412,6 +306,60 @@
         }
         async function performLogin() { if ((await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: document.getElementById('loginUser').value, password: document.getElementById('loginPass').value }) })).ok) location.reload(); else document.getElementById('loginError').classList.remove('hidden'); }
         async function logout() { await fetch('/api/logout', { method: 'POST' }); location.reload(); }
+
+        function openSettings() {
+            openTournamentModal('edit', TOURNAMENT);
+        }
+
+        // Shared function for both views to open the unified modal
+        function openTournamentModal(mode, data) {
+            const modal = document.getElementById('tournamentModal');
+            document.getElementById('tmError').classList.add('hidden');
+
+            // Edit Mode logic (since view page only uses edit)
+            document.getElementById('modalTitle').innerHTML = `<i class="ph ph-sliders text-orange-500"></i> Settings`;
+            document.getElementById('submitBtn').innerText = 'Save Changes';
+            document.getElementById('deleteBtn').classList.remove('hidden');
+            document.getElementById('recalculateSection').classList.remove('hidden');
+
+            document.getElementById('tmId').value = data.id || T_ID;
+            document.getElementById('tmMode').value = 'edit';
+            document.getElementById('tmName').value = data.name;
+            document.getElementById('tmCode').value = data.code || '';
+            document.getElementById('tmDate').value = data.date || '';
+            document.getElementById('tmCourts').value = (data.courts || []).join(', ');
+            document.getElementById('tmTeams').value = (data.teams || []).join('\n');
+            document.getElementById('tmStartTime').value = data.start_time || '09:00';
+            document.getElementById('tmDuration').value = data.match_duration || 30;
+            document.getElementById('tmType').value = data.type || 'double';
+
+            modal.showModal();
+        }
+
+        async function submitTournament() {
+            const id = document.getElementById('tmId').value;
+            const payload = {
+                name: document.getElementById('tmName').value,
+                date: document.getElementById('tmDate').value,
+                code: document.getElementById('tmCode').value,
+                type: document.getElementById('tmType').value,
+                courts: document.getElementById('tmCourts').value,
+                duration: document.getElementById('tmDuration').value,
+                start_time: document.getElementById('tmStartTime').value,
+                teams: document.getElementById('tmTeams').value
+            };
+            const res = await fetch(`/api/settings/${id}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            if (res.ok) location.reload(); else { const err = await res.json(); document.getElementById('tmError').innerText = err.error; document.getElementById('tmError').classList.remove('hidden'); }
+        }
+
+        async function recalculateSchedule() {
+            const id = document.getElementById('tmId').value;
+            if ((await fetch(`/api/settings/${id}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ recalculate: true }) })).ok) { location.reload(); }
+        }
+        async function deleteTournament() {
+            const id = document.getElementById('tmId').value;
+            if (confirm("Are you sure?")) { if ((await fetch(`/api/delete/${id}`, { method: 'POST' })).ok) window.location.href = '/'; }
+        }
 
         function renderScheduleTable() {
             const tb = document.getElementById('tableBody'), ml = document.getElementById('mobileScheduleList'); let hT = '', hM = '';
@@ -456,15 +404,6 @@
             return div;
         }
 
-        function openSettings() {
-            // Safe checking for null/undefined values before assigning
-            document.getElementById('settingName').value = TOURNAMENT.name || '';
-            document.getElementById('settingCourts').value = (TOURNAMENT.courts || []).join(', ');
-            document.getElementById('settingTeams').value = (TOURNAMENT.teams || []).join('\n');
-            document.getElementById('settingStartTime').value = TOURNAMENT.start_time || '09:00';
-            document.getElementById('settingDuration').value = TOURNAMENT.match_duration || 30;
-            document.getElementById('settingsModal').showModal();
-        }
         function openScore(id) {
             document.getElementById('scoreError').classList.add('hidden');
             const m = TOURNAMENT.matches.find(x => x.id === id);
@@ -498,12 +437,6 @@
             const res = await fetch(`/api/report/${TOURNAMENT.id}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: activeMatchId, clear: true, code }) });
             if (res.ok) { document.getElementById('scoreModal').close(); fetchTournamentData(); } else showError('scoreError', (await res.json()).error);
         }
-        async function saveSettings() {
-            const n = document.getElementById('settingName').value, c = document.getElementById('settingCourts').value, t = document.getElementById('settingTeams').value, st = document.getElementById('settingStartTime').value, dur = document.getElementById('settingDuration').value;
-            if ((await fetch(`/api/settings/${TOURNAMENT.id}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: n, courts: c, teams: t, start_time: st, match_duration: dur }) })).ok) { document.getElementById('settingsModal').close(); fetchTournamentData(); } else showError('settingsError', "Error saving settings");
-        }
-        async function recalculateSchedule() { if ((await fetch(`/api/settings/${TOURNAMENT.id}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ recalculate: true }) })).ok) { document.getElementById('settingsModal').close(); fetchTournamentData(); } else showError('settingsError', "Error"); }
-        async function deleteTournament() { if (confirm("Are you sure?")) { if ((await fetch(`/api/delete/${TOURNAMENT.id}`, { method: 'POST' })).ok) window.location.href = '/'; } }
         function showError(elementId, msg) { const el = document.getElementById(elementId); el.innerText = msg || "An error occurred"; el.classList.remove('hidden'); }
 
         function setView(view) {
@@ -514,9 +447,6 @@
                 b.classList.remove('bg-orange-600', 'dark:bg-orange-700', 'text-zinc-50', 'dark:text-white', 'shadow-sm', 'border', 'border-gray-200', 'dark:border-transparent');
                 b.classList.add('text-zinc-500', 'dark:text-zinc-400');
             });
-
-            'bg-orange-600', 'dark:bg-orange-700'
-
             const dBtn = document.getElementById('btn-' + view + '-d');
             dBtn.classList.add('bg-orange-600', 'dark:bg-orange-700', 'text-zinc-50', 'dark:text-white', 'shadow-sm', 'border', 'border-gray-200', 'dark:border-transparent');
             dBtn.classList.remove('text-zinc-500', 'dark:text-zinc-400');

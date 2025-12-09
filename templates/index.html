@@ -53,180 +53,208 @@
 
             <!-- Main Actions Row -->
             <div class="flex justify-between items-center mb-6">
-                <h2 class="text-xl font-bold text-zinc-700 dark:text-zinc-300">Active Tournaments</h2>
+                <h2 class="text-xl font-bold text-zinc-700 dark:text-zinc-300">Tournaments</h2>
                 <div id="createBtnContainer"></div>
             </div>
 
-            <!-- Active Tournaments Grid -->
-            <div class="grid md:grid-cols-2 gap-6 pb-20">
-                {% for id, t in tournaments.items() %}
-                <a href="/t/{{ id }}"
-                    class="block bg-white dark:bg-zinc-800 p-6 rounded-xl shadow-sm hover:shadow-md dark:shadow-none hover:scale-[1.02] transition border border-gray-200 dark:border-zinc-700 group">
-                    <div class="flex justify-between items-start mb-4">
-                        <h2
-                            class="text-xl font-bold truncate text-zinc-900 dark:text-white group-hover:text-orange-500 dark:group-hover:text-orange-400 transition">
-                            {{ t.name }}</h2>
-                        <span
-                            class="bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300 text-xs px-2 py-1 rounded font-mono border border-orange-200 dark:border-orange-800">{{
-                            t.type|upper }}</span>
+            <!-- TOURNAMENT SECTIONS -->
+            <div class="space-y-8 pb-20">
+                {% if live %}
+                <div>
+                    <div class="flex items-center gap-2 mb-3">
+                        <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                        <h3 class="text-sm font-bold text-zinc-500 uppercase tracking-wider">Live Today</h3>
                     </div>
-                    <div class="flex gap-4 text-sm text-zinc-500 dark:text-zinc-400">
-                        <div class="flex items-center gap-1"><i class="ph ph-users text-orange-500"></i> {{
-                            t.teams|length }} Teams</div>
-                        <div class="flex items-center gap-1"><i class="ph ph-court-basketball text-orange-500"></i> {{
-                            t.courts|length }} Courts</div>
+                    <div class="grid md:grid-cols-2 gap-4">{% for id, t in live.items() %}{% include
+                        'partials/tournament_card.html' %}{% endfor %}</div>
+                </div>
+                {% endif %}
+                {% if future %}
+                <div>
+                    <div class="flex items-center gap-2 mb-3">
+                        <i class="ph ph-calendar-blank text-zinc-500"></i>
+                        <h3 class="text-sm font-bold text-zinc-500 uppercase tracking-wider">Upcoming</h3>
                     </div>
-                    <div
-                        class="mt-4 flex items-center gap-2 text-xs text-zinc-400 border-t border-gray-100 dark:border-zinc-700 pt-3">
-                        <i class="ph ph-hash"></i> ID: <span class="font-mono">{{ id }}</span>
+                    <div class="grid md:grid-cols-2 gap-4">
+                        {% for id, t in future.items() %}
+                        <div class="{% if loop.index > 4 %}hidden upcoming-extra{% endif %}">
+                            {% include 'partials/tournament_card.html' %}
+                        </div>
+                        {% endfor %}
                     </div>
-                </a>
-                {% else %}
+                    {% if future|length > 4 %}
+                    <div class="mt-4 text-center">
+                        <button id="showMoreUpcomingBtn" data-count="{{ future|length }}" onclick="toggleUpcoming()"
+                            class="text-sm text-zinc-500 hover:text-orange-500 font-medium transition flex items-center justify-center gap-1 mx-auto w-full py-2">
+                            Show All ({{ future|length }}) <i class="ph ph-caret-down"></i>
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+                {% if past %}
+                <div><button onclick="togglePast()"
+                        class="w-full flex items-center justify-between group mb-3 focus:outline-none">
+                        <div class="flex items-center gap-2"><i
+                                class="ph ph-clock-counter-clockwise text-zinc-500 group-hover:text-orange-500 transition"></i>
+                            <h3
+                                class="text-sm font-bold text-zinc-500 group-hover:text-zinc-700 dark:group-hover:text-zinc-300 uppercase tracking-wider transition">
+                                Past</h3>
+                        </div><i id="pastChevron"
+                            class="ph ph-caret-down text-zinc-400 group-hover:text-orange-500 transition transform -rotate-90"></i>
+                    </button>
+                    <div id="pastList" class="hidden grid md:grid-cols-2 gap-4 opacity-75 hover:opacity-100 transition">
+                        {% for id, t in past.items() %}{% include 'partials/tournament_card.html' %}{% endfor %}</div>
+                </div>
+                {% endif %}
+                {% if not live and not future and not past %}
                 <div
-                    class="col-span-2 text-center py-20 bg-white dark:bg-zinc-800 rounded-xl border border-dashed border-gray-300 dark:border-zinc-700">
+                    class="text-center py-20 bg-white dark:bg-zinc-800 rounded-xl border border-dashed border-gray-300 dark:border-zinc-700">
                     <p class="text-xl text-zinc-400">No tournaments found.</p>
                 </div>
-                {% endfor %}
+                {% endif %}
             </div>
         </div>
     </div>
 
-    <button onclick="toggleTheme()"
-        class="flex items-center justify-center fixed z-50 right-4 bottom-6 bg-zinc-800 dark:bg-white text-white dark:text-zinc-900 p-3 rounded-full shadow-lg hover:scale-110 transition-transform duration-200 border border-zinc-700 dark:border-zinc-300 focus:outline-none focus:ring-2 focus:ring-orange-500"
-        aria-label="Toggle Theme">
-        <i id="themeIcon" class="ph ph-moon text-xl block"></i>
-    </button>
+    {% include 'components/theme.html' %}
+    {% include 'components/modals.html' %}
 
-    <!-- Create Modal -->
-    <dialog id="createModal"
-        class="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white rounded-xl shadow-2xl backdrop:bg-black/60 p-0 w-full max-w-lg m-auto border border-gray-200 dark:border-zinc-700">
-        <form action="/create" method="POST" class="p-6">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-xl font-bold flex items-center gap-2"><i class="ph ph-plus-circle text-orange-500"></i>
-                    New Tournament</h2>
-                <button aria-label="Close score dialog" type="button"
-                    onclick="document.getElementById('createModal').close()"
-                    class="focus-visible:outline-none text-zinc-400 hover:text-zinc-900 dark:hover:text-white"><i
-                        class="ph ph-x text-xl"></i></button>
-            </div>
-            <div class="space-y-4">
-                <div><label class="block text-sm font-bold mb-1 text-zinc-500 uppercase text-xs">Name</label><input
-                        type="text" name="name" placeholder="My Awesome Tournament" required enterkeyhint="next"
-                        onkeydown="if(event.key==='Enter'){event.preventDefault(); document.getElementById('tournamentCode').focus();}"
-                        class="w-full bg-gray-50 dark:bg-zinc-950 border border-gray-300 dark:border-zinc-600 rounded p-2 focus:border-orange-500 outline-none">
-                </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div><label class="block text-sm font-bold mb-1 text-zinc-500 uppercase text-xs">Code</label><input
-                            type="text" name="code" placeholder="••••" required id="tournamentCode" enterkeyhint="next"
-                            onkeydown="if(event.key==='Enter'){event.preventDefault(); document.getElementById('createType').focus();}"
-                            class="w-full h-10 bg-gray-50 dark:bg-zinc-950 border border-gray-300 dark:border-zinc-600 rounded p-2 text-center font-mono">
-                    </div>
-                    <div><label class="block text-sm font-bold mb-1 text-zinc-500 uppercase text-xs">Type</label><select
-                            name="type" id="createType" enterkeyhint="next"
-                            onkeydown="if(event.key==='Enter'){event.preventDefault(); document.getElementById('teams').focus();}"
-                            class="w-full h-10 bg-gray-50 dark:bg-zinc-950 border border-gray-300 dark:border-zinc-600 rounded p-2">
-                            <option value="double">Double Elimination</option>
-                            <option value="single">Single Elimination</option>
-                        </select></div>
-                </div>
-                <div><label class="block text-sm font-bold mb-1 text-zinc-500 uppercase text-xs">Teams</label><textarea
-                        name="teams" placeholder="One team per line..." required id="teams"
-                        class="w-full h-34 bg-gray-50 dark:bg-zinc-950 border border-gray-300 dark:border-zinc-600 rounded p-2 font-mono text-sm focus:border-orange-500 outline-none"></textarea>
-                </div>
-                <div><label class="block text-sm font-bold mb-1 text-zinc-500 uppercase text-xs">Courts</label><input
-                        type="text" name="courts" placeholder="Center Court, Court 1" required
-                        onkeydown="if(event.key==='Enter'){event.preventDefault(); document.getElementById('createDuration').focus();}"
-                        class="w-full bg-gray-50 dark:bg-zinc-950 border border-gray-300 dark:border-zinc-600 rounded p-2 focus:border-orange-500 outline-none">
-                </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div><label class="block text-sm font-bold mb-1 text-zinc-500 uppercase text-xs">Match
-                            Duration</label><input type="number" pattern="[0-9]*" min="0" name="duration" value="30"
-                            id="createDuration" enterkeyhint="next"
-                            onkeydown="if(event.key==='Enter'){event.preventDefault(); document.getElementById('createStartTime').focus();}"
-                            class="w-full bg-gray-50 dark:bg-zinc-950 border border-gray-300 dark:border-zinc-600 rounded p-2 h-10 text-base appearance-none">
-                    </div>
-                    <div><label class="block text-sm font-bold mb-1 text-zinc-500 uppercase text-xs">Start
-                            Time</label><input type="time" name="start_time" value="10:00" id="createStartTime"
-                            enterkeyhint="done"
-                            class="w-full bg-gray-50 dark:bg-zinc-950 border border-gray-300 dark:border-zinc-600 rounded p-2 h-10 text-base appearance-none">
-                    </div>
-                </div>
-            </div>
-            <div class="mt-8 flex justify-end gap-3 border-t border-gray-200 dark:border-zinc-700 pt-4">
-                <button type="submit" id="submitCreate"
-                    class="bg-orange-600 hover:bg-orange-500 text-white px-6 py-2 rounded font-bold shadow-lg shadow-orange-900/20">Create
-                    Tournament</button>
-            </div>
-        </form>
-    </dialog>
-
-    <dialog id="loginModal"
-        class="bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white rounded-xl shadow-2xl backdrop:bg-black/60 p-0 w-80 m-auto border border-gray-200 dark:border-zinc-700">
-        <div class="p-6">
-            <div class="flex justify-center">
-                <div class="flex justify-between items-center bg-zinc-100 dark:bg-zinc-800 p-2 rounded-full"><i
-                        class="ph ph-lock-key text-2xl text-orange-500"></i></div>
-            </div>
-            <h2 class="text-lg font-bold mb-4 text-center">Admin Login</h2>
-            <div id="loginError" class="hidden text-xs text-red-500 text-center mb-3">Invalid Credentials</div>
-            <input id="loginUser"
-                class="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-300 dark:border-zinc-600 rounded p-3 mb-3 focus:border-orange-500 outline-none transition"
-                placeholder="Username" enterkeyhint="next"
-                onkeydown="if(event.key==='Enter') document.getElementById('loginPass').focus()">
-            <input type="password" id="loginPass"
-                class="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-300 dark:border-zinc-600 rounded p-3 mb-6 focus:border-orange-500 outline-none transition"
-                placeholder="Password" enterkeyhint="done" onkeydown="if(event.key==='Enter') performLogin()">
-            <div class="flex justify-between items-center">
-                <form method="dialog"><button
-                        class="px-3 py-1 text-zinc-400 text-sm hover:text-zinc-600 dark:hover:text-white">Cancel</button>
-                </form>
-                <button onclick="performLogin()"
-                    class="bg-orange-600 hover:bg-orange-500 text-white px-4 py-1 rounded font-bold">Login</button>
-            </div>
-        </div>
-    </dialog>
+    <!-- DATA INJECTION FOR LINTER COMPLIANCE -->
+    <script type="application/json" id="all-tournaments">{{ tournaments|tojson|safe }}</script>
 
     <script>
-        function toggleTheme() {
-            const html = document.documentElement;
-            if (html.classList.contains('dark')) {
-                html.classList.remove('dark');
-                localStorage.theme = 'light';
-                document.getElementById('themeIcon').className = 'ph ph-sun text-xl';
+        const ALL_TOURNAMENTS = JSON.parse(document.getElementById('all-tournaments').textContent);
+        let isAdmin = false;
+        document.getElementById('themeIcon').className = document.documentElement.classList.contains('dark') ? 'ph ph-moon text-xl' : 'ph ph-sun text-xl';
+        function togglePast() { const l = document.getElementById('pastList'), c = document.getElementById('pastChevron'); if (l.classList.contains('hidden')) { l.classList.remove('hidden'); c.classList.remove('-rotate-90'); c.classList.add('rotate-0') } else { l.classList.add('hidden'); c.classList.add('-rotate-90'); c.classList.remove('rotate-0') } }
+        function toggleUpcoming() {
+            const extras = document.querySelectorAll('.upcoming-extra');
+            const btn = document.getElementById('showMoreUpcomingBtn');
+            if (!btn || !extras.length) return;
+
+            if (extras[0].classList.contains('hidden')) {
+                // Expand
+                extras.forEach(el => el.classList.remove('hidden'));
+                btn.innerHTML = 'Show Less <i class="ph ph-caret-up"></i>';
             } else {
-                html.classList.add('dark');
-                localStorage.theme = 'dark';
-                document.getElementById('themeIcon').className = 'ph ph-moon text-xl';
+                // Collapse
+                extras.forEach(el => el.classList.add('hidden'));
+                btn.innerHTML = `Show All (${btn.dataset.count}) <i class="ph ph-caret-down"></i>`;
             }
         }
-        document.getElementById('themeIcon').className = document.documentElement.classList.contains('dark') ? 'ph ph-moon text-xl' : 'ph ph-sun text-xl';
 
         async function checkAuth() {
-            const res = await fetch('/api/check-auth');
-            const data = await res.json();
-            const container = document.getElementById('authControls');
-            const createBtn = document.getElementById('createBtnContainer');
-
-            if (data.is_admin) {
-                container.innerHTML = `<button onclick="logout()" class="h-10 w-10 flex items-center justify-center p-2 rounded-full hover:bg-zinc-200 dark:hover:bg-zinc-800 transition text-zinc-600 dark:text-zinc-400"><i class="ph ph-sign-out text-xl"></i></button>`;
-                createBtn.innerHTML = `
-                    <button onclick="document.getElementById('createModal').showModal()" class="flex items-center justify-center bg-orange-600 hover:bg-orange-500 text-white px-4 py-2 rounded-lg font-bold shadow-lg flex items-center gap-2">
+            const res = await fetch('/api/check-auth'); const data = await res.json(); isAdmin = data.is_admin;
+            const c = document.getElementById('authControls'); const btn = document.getElementById('createBtnContainer');
+            if (isAdmin) {
+                c.innerHTML = `<button onclick="logout()" class="h-10 w-10 flex items-center justify-center p-2 rounded-full hover:bg-zinc-200 dark:hover:bg-zinc-800 transition text-zinc-600 dark:text-zinc-400"><i class="ph ph-sign-out text-xl"></i></button>`;
+                btn.innerHTML = `
+                    <button onclick="openTournamentModal('create')" class="flex items-center justify-center bg-orange-600 hover:bg-orange-500 text-white px-4 py-2 rounded-lg font-bold shadow-lg flex items-center gap-2">
                         <i class="ph ph-plus"></i> Create
                     </button>`;
+                document.querySelectorAll('.admin-cog').forEach(el => el.classList.remove('hidden'));
             } else {
-                container.innerHTML = `<button onclick="document.getElementById('loginModal').showModal()" class="h-10 w-10 flex items-center justify-center p-2 rounded-full hover:bg-zinc-200 dark:hover:bg-zinc-800 transition text-zinc-600 dark:text-zinc-400"><i class="ph ph-lock-key text-xl"></i></button>`;
+                c.innerHTML = `<button onclick="document.getElementById('loginModal').showModal()" class="h-10 w-10 flex items-center justify-center p-2 rounded-full hover:bg-zinc-200 dark:hover:bg-zinc-800 transition text-zinc-600 dark:text-zinc-400"><i class="ph ph-lock-key text-xl"></i></button>`;
             }
+        }
+
+        // UNIFIED MODAL LOGIC
+        function openTournamentModal(mode, id) {
+            const modal = document.getElementById('tournamentModal');
+            document.getElementById('tmError').classList.add('hidden');
+
+            // Set fields based on mode
+            if (mode === 'create') {
+                document.getElementById('modalTitle').innerHTML = `<i class="ph ph-plus-circle text-orange-500"></i> New Tournament`;
+                document.getElementById('submitBtn').innerText = 'Create';
+                document.getElementById('deleteBtn').classList.add('hidden');
+                document.getElementById('recalculateSection').classList.add('hidden');
+
+                // Clear fields
+                document.getElementById('tmId').value = '';
+                document.getElementById('tmMode').value = 'create';
+                document.getElementById('tmName').value = '';
+                document.getElementById('tmCode').value = '';
+                document.getElementById('tmDate').value = new Date().toLocaleDateString();
+                document.getElementById('tmCourts').value = '';
+                document.getElementById('tmTeams').value = '';
+                document.getElementById('tmStartTime').value = '09:00';
+                document.getElementById('tmDuration').value = '30';
+            } else if (mode === 'edit') {
+                const t = ALL_TOURNAMENTS[id];
+                document.getElementById('modalTitle').innerHTML = `<i class="ph ph-sliders text-orange-500"></i> Settings`;
+                document.getElementById('submitBtn').innerText = 'Save Changes';
+                document.getElementById('deleteBtn').classList.remove('hidden');
+                document.getElementById('recalculateSection').classList.remove('hidden');
+
+                // Fill fields
+                document.getElementById('tmId').value = id;
+                document.getElementById('tmMode').value = 'edit';
+                document.getElementById('tmName').value = t.name;
+                document.getElementById('tmCode').value = t.code || '';
+                document.getElementById('tmDate').value = t.date || '';
+                document.getElementById('tmCourts').value = (t.courts || []).join(', ');
+                document.getElementById('tmTeams').value = (t.teams || []).join('\n');
+                document.getElementById('tmStartTime').value = t.start_time || '09:00';
+                document.getElementById('tmDuration').value = t.match_duration || 30;
+                document.getElementById('tmType').value = t.type || 'double';
+            }
+            modal.showModal();
+        }
+
+        async function submitTournament() {
+            const mode = document.getElementById('tmMode').value;
+            const id = document.getElementById('tmId').value;
+
+            const payload = {
+                name: document.getElementById('tmName').value,
+                date: document.getElementById('tmDate').value,
+                code: document.getElementById('tmCode').value,
+                type: document.getElementById('tmType').value,
+                courts: document.getElementById('tmCourts').value,
+                duration: document.getElementById('tmDuration').value,
+                start_time: document.getElementById('tmStartTime').value,
+                teams: document.getElementById('tmTeams').value
+            };
+
+            let url = '/create';
+            if (mode === 'edit') url = `/api/settings/${id}`;
+
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (res.ok) location.reload();
+            else {
+                const err = await res.json();
+                const errBox = document.getElementById('tmError');
+                errBox.innerText = err.error || "Error saving tournament";
+                errBox.classList.remove('hidden');
+            }
+        }
+
+        // Helper for dashboard edit button
+        function openDashboardSettings(id, event) {
+            event.preventDefault(); event.stopPropagation();
+            openTournamentModal('edit', id);
+        }
+
+        async function recalculateSchedule() {
+            const id = document.getElementById('tmId').value;
+            if ((await fetch(`/api/settings/${id}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ recalculate: true }) })).ok) { location.reload(); }
+        }
+
+        async function deleteTournament() {
+            const id = document.getElementById('tmId').value;
+            if (confirm("Are you sure?")) { if ((await fetch(`/api/delete/${id}`, { method: 'POST' })).ok) location.reload(); }
         }
 
         async function performLogin() {
-            const u = document.getElementById('loginUser').value;
-            const p = document.getElementById('loginPass').value;
-            const res = await fetch('/api/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username: u, password: p })
-            });
-            if (res.ok) location.reload();
+            const u = document.getElementById('loginUser').value; const p = document.getElementById('loginPass').value;
+            if ((await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: u, password: p }) })).ok) location.reload();
             else document.getElementById('loginError').classList.remove('hidden');
         }
 

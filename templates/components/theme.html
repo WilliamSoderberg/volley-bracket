@@ -1,0 +1,20 @@
+<button onclick="toggleTheme()"
+    class="flex items-center justify-center fixed z-50 right-4 bottom-6 bg-zinc-800 dark:bg-white text-white dark:text-zinc-900 p-3 rounded-full shadow-lg hover:scale-110 transition-transform duration-200 border border-zinc-700 dark:border-zinc-300 focus:outline-none focus:ring-2 focus:ring-orange-500"
+    aria-label="Toggle Theme">
+    <i id="themeIcon" class="ph ph-moon text-xl block"></i>
+</button>
+
+<script>
+    function toggleTheme() {
+        const html = document.documentElement;
+        if (html.classList.contains('dark')) {
+            html.classList.remove('dark');
+            localStorage.theme = 'light';
+            document.getElementById('themeIcon').className = 'ph ph-sun text-xl';
+        } else {
+            html.classList.add('dark');
+            localStorage.theme = 'dark';
+            document.getElementById('themeIcon').className = 'ph ph-moon text-xl';
+        }
+    }
+</script>

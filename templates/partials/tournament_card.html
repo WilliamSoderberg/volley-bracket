@@ -1,0 +1,25 @@
+<!-- Tournament card -->
+<a href="/t/{{ id }}"
+    class="block bg-white dark:bg-zinc-800 p-6 rounded-xl shadow-sm dark:shadow-none border border-gray-200 dark:border-zinc-700 relative group hover:shadow-md hover:scale-[1.02] transition will-change-transform transform-gpu">
+    <div class="flex justify-between items-start mb-4">
+        <div>
+            <h2
+                class="text-xl font-bold truncate text-zinc-900 dark:text-white group-hover:text-orange-500 dark:group-hover:text-orange-400 transition">
+                {{ t.name }}</h2>
+            <div class="text-xs text-zinc-400 dark:text-zinc-500 mt-1 font-mono">{{ t.date }} {{ t.start_time }}</div>
+        </div>
+        <span
+            class="bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300 text-xs px-2 py-1 rounded font-mono border border-orange-200 dark:border-orange-800">{{
+            t.type|upper }}</span>
+    </div>
+    <div class="flex gap-4 text-sm text-zinc-500 dark:text-zinc-400">
+        <div class="flex items-center gap-1"><i class="ph ph-users text-orange-500"></i> {{ t.teams|length }} Teams
+        </div>
+        <div class="flex items-center gap-1"><i class="ph ph-court-basketball text-orange-500"></i> {{
+            t.courts|length }} Courts</div>
+        <button onclick="openDashboardSettings('{{ id }}', event)"
+            class="admin-cog hidden ml-auto hover:text-orange-500 transition z-10 h-8 w-8 flex items-center justify-center rounded-full transition text-zinc-600 dark:text-zinc-400">
+            <i class="ph ph-gear text-xl"></i>
+        </button>
+    </div>
+</a>
