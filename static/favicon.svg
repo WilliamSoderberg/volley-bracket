@@ -1,1 +1,26 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11.1 7.1a16.55 16.55 0 0 1 10.9 4"></path><path d="M12 12a12.6 12.6 0 0 1-8.7 5"></path><path d="M16.8 13.6a16.55 16.55 0 0 1-9 7.5"></path><path d="M20.7 17a12.8 12.8 0 0 0-8.7-5 13.3 13.3 0 0 1 0-10"></path><path d="M6.3 3.8a16.55 16.55 0 0 0 1.9 11.5"></path><circle cx="12" cy="12" r="10"></circle></svg>
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_1" xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 256 256">
+  <!-- Generator: Adobe Illustrator 30.0.0, SVG Export Plug-In . SVG Version: 2.1.1 Build 123)  -->
+  <defs>
+    <style>
+      .st0 {
+        stroke: #ff6900;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        stroke-width: 16px;
+      }
+
+      .st0, .st1 {
+        fill: none;
+      }
+    </style>
+  </defs>
+  <rect class="st1" width="256" height="256"/>
+  <line class="st0" x1="80" y1="44.86" x2="128" y2="128"/>
+  <line class="st0" x1="80" y1="211.14" x2="128" y2="128"/>
+  <line class="st0" x1="224" y1="128" x2="128" y2="128"/>
+  <path class="st0" d="M116.58,32.66c37.12,16.61,59.75,54.81,56.48,95.34"/>
+  <path class="st0" d="M51.14,185.56c-4.16-40.44,17.6-79.13,54.33-96.56"/>
+  <path class="st0" d="M216.28,165.78c-32.95,23.84-77.34,24.33-110.81,1.22"/>
+  <circle class="st0" cx="128" cy="128" r="96"/>
+</svg>
