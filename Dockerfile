@@ -16,4 +16,4 @@ COPY . .
 RUN mkdir -p /data
 
 EXPOSE $PORT
-CMD ["gunicorn", "--bind", "0.0.0.0:${PORT}", "--workers", "4", "app:app"]
+CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:${PORT} --workers 4 app:app"]
