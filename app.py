@@ -609,8 +609,18 @@ def report_score(t_id):
             match.sets = data.get("sets", [])
             p1s = 0
             p2s = 0
+            p1_points = 0
+            p2_points = 0
+
             for s in match.sets:
-                s1, s2 = int(s["p1"]), int(s["p2"])
+                try:
+                    s1, s2 = int(s["p1"]), int(s["p2"])
+                except (ValueError, TypeError):
+                    continue
+
+                p1_points += s1
+                p2_points += s2
+
                 if s1 > s2:
                     p1s += 1
                 elif s2 > s1:
@@ -623,7 +633,17 @@ def report_score(t_id):
             elif p2s > p1s:
                 match.winner = match.p2
             else:
-                return jsonify({"error": "Match Tied"}), 400
+                # Sets are tied (or 0-0), determine winner by total points
+                if p1_points > p2_points:
+                    match.winner = match.p1
+                elif p2_points > p1_points:
+                    match.winner = match.p2
+                else:
+                    return (
+                        jsonify({"error": "Match Tied (Sets and Total Points equal)"}),
+                        400,
+                    )
+
             match.status = "Finished"
 
         refresh_bracket(t)
