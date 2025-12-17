@@ -7,8 +7,6 @@ import {
 } from 'lucide-react';
 
 // --- DYNAMIC API CONFIGURATION ---
-// This allows the app to connect to the backend using the same IP address 
-// you used to open the frontend (e.g., http://192.168.1.50:5173 -> connects to :8080)
 const getBackendHost = () => {
   const host = window.location.hostname || 'localhost';
   return host;
@@ -122,7 +120,7 @@ const SettingsForm = ({ tournament, onSubmit, onDelete }) => {
       <input name="courts" placeholder="Courts (e.g. Center, Court 1)" defaultValue={tournament?.courts?.join(', ')} required className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-800 p-3 rounded-xl dark:text-white font-bold" />
       <textarea name="teams" placeholder="Teams (one per line)" defaultValue={tournament?.teams?.join('\n')} rows={5} required className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-800 p-3 rounded-xl font-mono text-sm dark:text-white font-bold" />
       <div className="flex justify-between pt-4 border-t border-zinc-200 dark:border-zinc-800">
-        {tournament && <button type="button" onClick={() => onDelete(tournament.id)} className="text-red-600 text-sm font-black uppercase tracking-widest hover:underline">Delete Tournament</button>}
+        {tournament && <button type="button" onClick={() => onDelete(tournament.id)} className="text-red-500 text-sm font-black uppercase tracking-widest hover:underline">Delete Tournament</button>}
         <button disabled={isSubmitting} type="submit" className="bg-orange-600 hover:bg-orange-500 text-white px-8 py-3 rounded-xl font-black uppercase tracking-widest text-xs transition active:scale-95 ml-auto shadow-lg shadow-orange-600/20">
           {isSubmitting ? 'Saving...' : (tournament ? 'Save Changes' : 'Create Tournament')}
         </button>
@@ -204,7 +202,7 @@ const ScoreForm = ({ match, isAdmin, onSubmit, onClear }) => {
 
       <div className="flex gap-3 pt-4 border-t border-zinc-100 dark:border-zinc-800">
         {match.winner && <button onClick={() => onClear(match.id, code)} className="w-1/3 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-xl font-black uppercase tracking-widest text-[10px] transition active:scale-95 border border-red-200 dark:border-red-900/50">Clear Match</button>}
-        <button onClick={handleSubmit} className="flex-1 bg-orange-600 hover:bg-orange-500 text-white py-4 rounded-xl font-black uppercase tracking-widest text-sm shadow-xl shadow-orange-600/20 transition active:scale-95">Submit Protocol</button>
+        <button onClick={handleSubmit} className="flex-1 bg-orange-600 hover:bg-orange-500 text-white py-4 rounded-xl font-black uppercase tracking-widest text-sm shadow-xl shadow-orange-600/20 transition active:scale-95">Submit Result</button>
       </div>
     </div>
   );
@@ -421,18 +419,21 @@ const ScheduleView = ({ schedule, onMatchClick }) => {
   );
 
   return (
-    <div className="p-6 max-w-4xl mx-auto h-full overflow-auto space-y-6">
-      <div className="relative group">
-        <input
-          placeholder="Search teams..."
-          className="w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 rounded-2xl p-4 pl-12 outline-none focus:ring-2 focus:ring-orange-500 transition shadow-sm text-zinc-900 dark:text-white font-bold"
-          value={filter}
-          onChange={e => setFilter(e.target.value)}
-        />
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 group-focus-within:text-orange-500 transition" size={20} />
+    <div className="h-full overflow-y-auto overflow-x-hidden relative flex flex-col">
+      {/* STICKY SEARCH BAR */}
+      <div className="sticky top-0 z-20 bg-zinc-50 dark:bg-zinc-950 p-6 pb-2">
+        <div className="relative group max-w-3xl mx-auto w-full">
+          <input
+            placeholder="Search teams..."
+            className="w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 rounded-2xl p-4 pl-12 outline-none focus:ring-2 focus:ring-orange-500 transition shadow-sm text-zinc-900 dark:text-white font-bold"
+            value={filter}
+            onChange={e => setFilter(e.target.value)}
+          />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 group-focus-within:text-orange-500 transition" size={20} />
+        </div>
       </div>
 
-      <div className="space-y-3 pb-24">
+      <div className="p-6 pt-2 max-w-4xl mx-auto w-full space-y-3 pb-32">
         {filtered.map(m => (
           <div key={m.id} className="bg-white dark:bg-zinc-900 p-4 rounded-2xl border border-zinc-300 dark:border-zinc-800 shadow-sm flex items-center justify-between group transition-all hover:border-orange-500/30">
             <div className="flex gap-6 items-center">
@@ -451,12 +452,12 @@ const ScheduleView = ({ schedule, onMatchClick }) => {
             </div>
             <div className="flex items-center gap-4">
               {m.winner ? (
-                <div className="text-right">
+                <div className="text-right shrink-0">
                   <div className="text-orange-500 font-black text-[10px] uppercase tracking-wider mb-0.5">Finished</div>
                   <div className="text-sm font-black font-mono text-zinc-900 dark:text-zinc-300">{m.p1_sets} - {m.p2_sets}</div>
                 </div>
               ) : (m.p1 && m.p2) && (
-                <button onClick={() => onMatchClick(m)} className="bg-orange-600 hover:bg-orange-500 text-white text-[10px] font-black uppercase px-5 py-2.5 rounded-xl transition shadow-lg shadow-orange-600/20 active:scale-95">Report</button>
+                <button onClick={() => onMatchClick(m)} className="bg-orange-600 hover:bg-orange-500 text-white text-[10px] font-black uppercase px-5 py-2.5 rounded-xl transition shadow-lg shadow-orange-600/20 active:scale-95 shrink-0">Report</button>
               )}
             </div>
           </div>
@@ -511,8 +512,19 @@ export default function App() {
 
   useEffect(() => {
     const root = window.document.documentElement;
-    if (darkMode) { root.classList.add('dark'); localStorage.setItem('theme', 'dark'); }
-    else { root.classList.remove('dark'); localStorage.setItem('theme', 'light'); }
+    const body = window.document.body;
+    if (darkMode) {
+      root.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+      // FIX FOR IOS WHITE BLEED:
+      root.style.backgroundColor = '#09090b'; // zinc-950
+      body.style.backgroundColor = '#09090b';
+    } else {
+      root.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+      root.style.backgroundColor = '#fafafa'; // zinc-50
+      body.style.backgroundColor = '#fafafa';
+    }
   }, [darkMode]);
 
   const checkAuth = async () => {
@@ -562,14 +574,15 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 transition-colors selection:bg-orange-500/30 overflow-x-hidden">
+    /* FIXED MAIN CONTAINER: Use absolute positioning to lock iOS browser scroll */
+    <div className="fixed inset-0 bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 transition-colors selection:bg-orange-500/30 flex flex-col overflow-hidden">
       {/* Navbar */}
-      <nav className="bg-white/95 dark:bg-zinc-900/95 backdrop-blur-lg border-b border-zinc-300 dark:border-zinc-800 sticky top-0 z-[100] px-3 sm:px-6 py-3 sm:py-4 flex justify-between items-center shadow-md">
+      <nav className="bg-white/95 dark:bg-zinc-900/95 backdrop-blur-lg border-b border-zinc-300 dark:border-zinc-800 sticky top-0 z-[100] px-3 sm:px-6 py-3 sm:py-4 flex justify-between items-center shadow-md shrink-0">
         <div className="flex items-center gap-2 sm:gap-4 cursor-pointer group select-none shrink-0" onClick={() => { setView('dashboard'); setTId(null); }}>
           <div className="p-1.5 sm:p-2.5 bg-orange-600 rounded-xl group-hover:rotate-12 transition-transform shadow-lg shadow-orange-600/30 active:scale-90">
             <Volleyball className="text-white" size={20} />
           </div>
-          {/* LOGO ONLY ON MOBILE */}
+          {/* JUST LOGO ON MOBILE */}
           <div className="hidden sm:block">
             <h1 className="text-2xl font-black tracking-tighter leading-none text-zinc-900 dark:text-white">VolleyManager</h1>
             <p className="text-[9px] font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mt-0.5">Tournament Ops</p>
@@ -611,10 +624,10 @@ export default function App() {
         </div>
       </nav>
 
-      <main className="h-[calc(100vh-57px)] sm:h-[calc(100vh-81px)] overflow-hidden relative">
+      <main className="flex-1 overflow-hidden relative">
         {view === 'dashboard' ? (
           <div className="h-full overflow-y-auto pt-8 sm:pt-16 pb-32">
-            <div className="container mx-auto max-w-6xl">
+            <div className="container mx-auto max-w-5xl">
               <Dashboard data={data} onSelect={(id) => { setTId(id); setView('tournament'); }} onEdit={openEdit} isAdmin={isAdmin} />
             </div>
           </div>
