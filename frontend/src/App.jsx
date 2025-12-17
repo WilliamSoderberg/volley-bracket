@@ -1,20 +1,21 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   Volleyball, CalendarDays, Network, Moon, Sun,
-  Plus, SlidersHorizontal, X, Trophy, Clock, Lock, LogOut,
+  Plus, SlidersHorizontal, X, Trophy, Lock, LogOut,
   Calendar, History, Search, Trash2, Users,
-  Check, ChevronDown, ChevronUp, Loader2, MapPin
+  Check, ChevronDown, ChevronUp, Loader2
 } from 'lucide-react';
 
-// --- API CLIENT ---
-const API_BASE = "http://localhost:8080";
-
-const getWsUrl = () => {
+// --- DYNAMIC API CONFIGURATION ---
+// This allows the app to connect to the backend using the same IP address 
+// you used to open the frontend (e.g., http://192.168.1.50:5173 -> connects to :8080)
+const getBackendHost = () => {
   const host = window.location.hostname || 'localhost';
-  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-  return `${protocol}//${host}:8080/ws`;
+  return host;
 };
-const WS_URL = getWsUrl();
+
+const API_BASE = `${window.location.protocol}//${getBackendHost()}:8080`;
+const WS_URL = `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${getBackendHost()}:8080/ws`;
 
 const getToken = () => localStorage.getItem('volleyToken');
 
@@ -106,7 +107,7 @@ const SettingsForm = ({ tournament, onSubmit, onDelete }) => {
           <input name="code" defaultValue={tournament?.code} required className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-800 p-3 rounded-xl text-center font-mono dark:text-white font-bold" />
         </div>
         <div>
-          <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Elimination Type</label>
+          <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Type</label>
           <select name="type" defaultValue={tournament?.type || "double"} className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-800 p-3 rounded-xl dark:text-white outline-none font-bold">
             <option value="double">Double Elimination</option>
             <option value="single">Single Elimination</option>
@@ -114,29 +115,14 @@ const SettingsForm = ({ tournament, onSubmit, onDelete }) => {
         </div>
       </div>
       <div className="grid grid-cols-3 gap-4">
-        <div>
-          <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Duration (m)</label>
-          <input type="number" name="duration" defaultValue={tournament?.match_duration || 30} className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-800 p-3 rounded-xl dark:text-white font-bold" />
-        </div>
-        <div>
-          <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Start</label>
-          <input type="time" name="start_time" defaultValue={tournament?.start_time || "09:00"} className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-800 p-3 rounded-xl dark:text-white font-bold" />
-        </div>
-        <div>
-          <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Date</label>
-          <input type="date" name="date" defaultValue={tournament?.date || new Date().toISOString().split('T')[0]} className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-800 p-3 rounded-xl dark:text-white font-bold" />
-        </div>
+        <input type="number" name="duration" placeholder="Min" defaultValue={tournament?.match_duration || 30} className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-800 p-3 rounded-xl dark:text-white font-bold" />
+        <input type="time" name="start_time" defaultValue={tournament?.start_time || "09:00"} className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-800 p-3 rounded-xl dark:text-white font-bold" />
+        <input type="date" name="date" defaultValue={tournament?.date || new Date().toISOString().split('T')[0]} className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-800 p-3 rounded-xl dark:text-white font-bold" />
       </div>
-      <div>
-        <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Courts</label>
-        <input name="courts" placeholder="Center, Court 1" defaultValue={tournament?.courts?.join(', ')} required className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-800 p-3 rounded-xl dark:text-white font-bold" />
-      </div>
-      <div>
-        <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Teams (One per line)</label>
-        <textarea name="teams" placeholder="Team names..." defaultValue={tournament?.teams?.join('\n')} rows={5} required className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-800 p-3 rounded-xl font-mono text-sm dark:text-white font-bold" />
-      </div>
+      <input name="courts" placeholder="Courts (e.g. Center, Court 1)" defaultValue={tournament?.courts?.join(', ')} required className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-800 p-3 rounded-xl dark:text-white font-bold" />
+      <textarea name="teams" placeholder="Teams (one per line)" defaultValue={tournament?.teams?.join('\n')} rows={5} required className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-800 p-3 rounded-xl font-mono text-sm dark:text-white font-bold" />
       <div className="flex justify-between pt-4 border-t border-zinc-200 dark:border-zinc-800">
-        {tournament && <button type="button" onClick={() => onDelete(tournament.id)} className="text-red-600 text-sm font-black uppercase tracking-widest hover:underline">Delete</button>}
+        {tournament && <button type="button" onClick={() => onDelete(tournament.id)} className="text-red-600 text-sm font-black uppercase tracking-widest hover:underline">Delete Tournament</button>}
         <button disabled={isSubmitting} type="submit" className="bg-orange-600 hover:bg-orange-500 text-white px-8 py-3 rounded-xl font-black uppercase tracking-widest text-xs transition active:scale-95 ml-auto shadow-lg shadow-orange-600/20">
           {isSubmitting ? 'Saving...' : (tournament ? 'Save Changes' : 'Create Tournament')}
         </button>
