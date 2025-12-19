@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  Volleyball, CalendarDays, Network, Moon, Sun,
-  Plus, SlidersHorizontal, X, Trophy, Lock, LogOut,
+  Activity, List, GitMerge, Moon, Sun,
+  Plus, SlidersHorizontal, X, Trophy, Clock, Lock, LogOut,
   Calendar, History, Search, Trash2, Users,
-  Check, ChevronDown, ChevronUp, Loader2
+  Check, ChevronDown, ChevronUp, Loader2, MapPin, AlertCircle
 } from 'lucide-react';
 
-// --- DYNAMIC API CONFIGURATION ---
+// --- API CONFIGURATION ---
 const getBackendHost = () => {
   const host = window.location.hostname || 'localhost';
   return host;
@@ -25,12 +25,18 @@ const api = {
     if (!isFormData) headers['Content-Type'] = 'application/json';
     const opts = { method, headers };
     if (data) opts.body = isFormData ? data : JSON.stringify(data);
-    const res = await fetch(`${API_BASE}${url}`, opts);
-    if (!res.ok) {
-      if (res.status === 401) localStorage.removeItem('volleyToken');
-      throw await res.json();
+
+    try {
+      const res = await fetch(`${API_BASE}${url}`, opts);
+      if (!res.ok) {
+        if (res.status === 401) localStorage.removeItem('volleyToken');
+        throw await res.json();
+      }
+      return res.json();
+    } catch (err) {
+      if (err instanceof TypeError) throw { detail: "network_error" };
+      throw err;
     }
-    return res.json();
   },
   get: (url) => api.request('GET', url),
   post: (url, data) => api.request('POST', url, data),
@@ -43,7 +49,7 @@ const api = {
 const stringToColor = (str) => {
   if (!str) return '#71717a';
   const normalized = str.trim().toLowerCase();
-  const salt = 'volley-standard-salt-v5';
+  const salt = 'volley-v1-stable-colors-final';
   const COURT_COLORS = ['#ea580c', '#0284c7', '#059669', '#ca8a04', '#dc2626', '#0891b2', '#e11d48', '#65a30d'];
   let hash = 0;
   const combined = normalized + salt;
@@ -57,7 +63,7 @@ const Modal = ({ isOpen, onClose, title, children }) => {
   if (!isOpen) return null;
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-lg border border-zinc-300 dark:border-zinc-800 max-h-[90vh] overflow-y-auto">
+      <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-sm border border-zinc-300 dark:border-zinc-800 max-h-[90vh] overflow-y-auto">
         <div className="p-6">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-black text-zinc-900 dark:text-white flex items-center gap-2 uppercase tracking-tight">{title}</h2>
@@ -66,6 +72,24 @@ const Modal = ({ isOpen, onClose, title, children }) => {
             </button>
           </div>
           {children}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const ConnectivityAlert = ({ backendDown }) => {
+  if (!backendDown) return null;
+  return (
+    <div className="sticky top-0 z-50 px-4 pt-4 shrink-0">
+      <div className="bg-red-500 text-white p-3 rounded-2xl flex items-center gap-3 shadow-xl shadow-red-900/20 border border-red-400/50">
+        <div className="relative flex h-3 w-3 shrink-0">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-100 opacity-75"></span>
+          <span className="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
+        </div>
+        <div>
+          <div className="font-black uppercase text-[10px] tracking-widest leading-none">System Offline</div>
+          <div className="text-[9px] font-bold opacity-90 mt-1 uppercase">Attempting to reconnect...</div>
         </div>
       </div>
     </div>
@@ -120,7 +144,7 @@ const SettingsForm = ({ tournament, onSubmit, onDelete }) => {
       <input name="courts" placeholder="Courts (e.g. Center, Court 1)" defaultValue={tournament?.courts?.join(', ')} required className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-800 p-3 rounded-xl dark:text-white font-bold" />
       <textarea name="teams" placeholder="Teams (one per line)" defaultValue={tournament?.teams?.join('\n')} rows={5} required className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-800 p-3 rounded-xl font-mono text-sm dark:text-white font-bold" />
       <div className="flex justify-between pt-4 border-t border-zinc-200 dark:border-zinc-800">
-        {tournament && <button type="button" onClick={() => onDelete(tournament.id)} className="text-red-500 text-sm font-black uppercase tracking-widest hover:underline">Delete Tournament</button>}
+        {tournament && <button type="button" onClick={() => onDelete(tournament.id)} className="text-red-600 text-sm font-black uppercase tracking-widest hover:underline">Delete Tournament</button>}
         <button disabled={isSubmitting} type="submit" className="bg-orange-600 hover:bg-orange-500 text-white px-8 py-3 rounded-xl font-black uppercase tracking-widest text-xs transition active:scale-95 ml-auto shadow-lg shadow-orange-600/20">
           {isSubmitting ? 'Saving...' : (tournament ? 'Save Changes' : 'Create Tournament')}
         </button>
@@ -153,15 +177,15 @@ const ScoreForm = ({ match, isAdmin, onSubmit, onClear }) => {
     <div className="space-y-6">
       {error && <div className="bg-red-50 text-red-600 p-3 rounded-xl text-center text-sm font-bold border border-red-100">{error}</div>}
 
-      <div className="flex justify-around items-center bg-zinc-50 dark:bg-zinc-950 p-5 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-inner">
+      <div className="flex justify-around items-center bg-zinc-50 dark:bg-zinc-950 p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-inner">
         <div className="text-center">
-          <div className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 mb-1">Time</div>
-          <div className="text-xl font-black font-mono text-zinc-900 dark:text-white">{match.time || '--:--'}</div>
+          <div className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 mb-1 w-full text-center">Time</div>
+          <div className="text-lg font-black font-mono text-zinc-900 dark:text-white">{match.time || '--:--'}</div>
         </div>
         <div className="w-px h-10 bg-zinc-200 dark:bg-zinc-800" />
         <div className="text-center">
-          <div className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 mb-1">Court</div>
-          <div className="text-xl font-black uppercase text-zinc-900 dark:text-white tracking-tighter flex items-center gap-2">
+          <div className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 mb-1 w-full text-center">Court</div>
+          <div className="text-lg font-black uppercase text-zinc-900 dark:text-white tracking-tighter flex items-center justify-center gap-2">
             <div className="w-2.5 h-2.5 rounded-full" style={{ background: stringToColor(match.court) }} />
             {match.court || 'TBD'}
           </div>
@@ -170,127 +194,42 @@ const ScoreForm = ({ match, isAdmin, onSubmit, onClear }) => {
 
       {!isAdmin && (
         <div className="space-y-2">
-          <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Authorization</label>
+          <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Authorization Code</label>
           <input type="password" value={code} onChange={e => setCode(e.target.value)} placeholder="•••••" className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-800 p-3 rounded-xl text-center tracking-[0.5em] dark:text-white font-bold outline-none focus:border-orange-500" />
         </div>
       )}
 
-      <div className="grid grid-cols-3 gap-2 text-center font-black text-zinc-800 dark:text-zinc-200 items-center">
-        <div className="text-sm truncate uppercase tracking-tight">{match.p1 || match.p1_label}</div>
-        <div className="text-[10px] bg-orange-600 text-white px-3 py-1.5 rounded-full w-fit mx-auto shadow-lg shadow-orange-600/20">VS</div>
-        <div className="text-sm truncate uppercase tracking-tight">{match.p2 || match.p2_label}</div>
+      <div className="grid grid-cols-3 gap-2 text-center font-black text-zinc-800 dark:text-zinc-200 items-center px-2">
+        <div className="text-xs truncate uppercase tracking-tight leading-tight">{match.p1 || match.p1_label}</div>
+        <div className="text-[10px] bg-orange-600 text-white px-2 py-1 rounded-full w-fit mx-auto shadow-lg">VS</div>
+        <div className="text-xs truncate uppercase tracking-tight leading-tight">{match.p2 || match.p2_label}</div>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-3">
         {sets.map((s, i) => (
           <div key={i} className="animate-in slide-in-from-top-1 px-1">
-            <div className="flex items-center gap-4">
-              <div className="flex-1 flex items-center gap-3">
-                <input type="number" value={s.p1} onChange={e => updateSet(i, 'p1', e.target.value)} className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-800 p-4 rounded-xl text-center dark:text-white font-black text-xl outline-none focus:border-orange-500 shadow-sm" />
-                <div className="w-4 h-0.5 bg-zinc-300 dark:bg-zinc-700 rounded-full shrink-0" />
-                <input type="number" value={s.p2} onChange={e => updateSet(i, 'p2', e.target.value)} className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-800 p-4 rounded-xl text-center dark:text-white font-black text-xl outline-none focus:border-orange-500 shadow-sm" />
+            <div className="flex items-center justify-center gap-2">
+              <div className="flex items-center gap-2">
+                <input type="number" value={s.p1} onChange={e => updateSet(i, 'p1', e.target.value)} className="w-16 bg-zinc-50 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-800 p-2.5 rounded-xl text-center dark:text-white font-black text-lg outline-none focus:border-orange-500 shadow-sm" />
+                <div className="w-3 h-0.5 bg-zinc-300 dark:bg-zinc-700 rounded-full shrink-0" />
+                <input type="number" value={s.p2} onChange={e => updateSet(i, 'p2', e.target.value)} className="w-16 bg-zinc-50 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-800 p-2.5 rounded-xl text-center dark:text-white font-black text-lg outline-none focus:border-orange-500 shadow-sm" />
               </div>
-              <button onClick={() => removeSet(i)} title="Remove Set" className="p-3 text-zinc-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-xl transition shrink-0 group">
-                <Trash2 size={20} className="group-hover:scale-110 transition-transform" />
-              </button>
+              {sets.length > 1 && (
+                <button onClick={() => removeSet(i)} title="Remove Set" className="p-2 text-zinc-300 hover:text-red-500 transition shrink-0">
+                  <Trash2 size={18} />
+                </button>
+              )}
             </div>
           </div>
         ))}
       </div>
 
-      <button onClick={() => setSets([...sets, { p1: '', p2: '' }])} className="w-full py-4 border-2 border-dashed border-zinc-300 dark:border-zinc-800 text-zinc-500 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] hover:border-orange-500 hover:text-orange-500 transition active:bg-orange-50 dark:active:bg-orange-900/10">+ Add Set</button>
+      <button onClick={() => setSets([...sets, { p1: '', p2: '' }])} className="w-full py-3 border-2 border-dashed border-zinc-300 dark:border-zinc-800 text-zinc-500 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] hover:border-orange-500 hover:text-orange-500 transition active:bg-orange-50 dark:active:bg-orange-900/10">+ Add Set</button>
 
       <div className="flex gap-3 pt-4 border-t border-zinc-100 dark:border-zinc-800">
-        {match.winner && <button onClick={() => onClear(match.id, code)} className="w-1/3 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-xl font-black uppercase tracking-widest text-[10px] transition active:scale-95 border border-red-200 dark:border-red-900/50">Clear Match</button>}
-        <button onClick={handleSubmit} className="flex-1 bg-orange-600 hover:bg-orange-500 text-white py-4 rounded-xl font-black uppercase tracking-widest text-sm shadow-xl shadow-orange-600/20 transition active:scale-95">Submit Result</button>
+        {match.winner && <button onClick={() => onClear(match.id, code)} className="w-1/3 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-xl font-black uppercase tracking-widest text-[10px] transition active:scale-95 border border-red-200 dark:border-red-900/50">Clear</button>}
+        <button onClick={handleSubmit} className="flex-1 bg-orange-600 hover:bg-orange-500 text-white py-4 rounded-xl font-black uppercase tracking-widest text-[11px] shadow-xl shadow-orange-600/20 transition active:scale-95">Submit Result</button>
       </div>
-    </div>
-  );
-};
-
-// --- DASHBOARD COMPONENTS ---
-
-const DashCard = ({ t, isAdmin, onSelect, onEdit }) => (
-  <div onClick={() => onSelect(t.id)} className="bg-white dark:bg-zinc-900 rounded-3xl p-5 shadow-sm border border-zinc-200 dark:border-zinc-800 cursor-pointer hover:shadow-2xl hover:-translate-y-1.5 transition-all relative overflow-hidden group">
-    <div className="absolute top-0 left-0 w-2 h-full bg-orange-600 group-hover:w-3 transition-all"></div>
-    <div className="flex justify-between items-start mb-4">
-      <h3 className="font-black text-xl text-zinc-900 dark:text-white truncate pr-4 leading-tight">{t.name}</h3>
-      {isAdmin && <button onClick={(e) => { e.stopPropagation(); onEdit(t.id); }} className="text-zinc-300 hover:text-orange-500 transition p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-2xl shrink-0"><SlidersHorizontal size={18} /></button>}
-    </div>
-    <div className="space-y-2.5">
-      <div className="flex items-center gap-2.5 text-zinc-700 dark:text-zinc-300 font-bold text-sm tracking-tight">
-        <Calendar size={16} className="text-orange-600 shrink-0" />
-        <span>{t.date} <span className="text-zinc-300 dark:text-zinc-700 mx-1">/</span> {t.start_time}</span>
-      </div>
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2.5 text-zinc-700 dark:text-zinc-300 font-bold text-sm tracking-tight">
-          <Users size={16} className="text-orange-600 shrink-0" />
-          <span>{t.team_count} Teams</span>
-        </div>
-        <span className="bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-widest border border-zinc-200 dark:border-zinc-700 text-zinc-500">{t.type}</span>
-      </div>
-    </div>
-  </div>
-);
-
-const Dashboard = ({ data, onSelect, onEdit, isAdmin }) => {
-  const [showPast, setShowPast] = useState(false);
-  const [showAllFuture, setShowAllFuture] = useState(false);
-
-  const futureAll = Object.values(data.future || {});
-  const future = showAllFuture ? futureAll : futureAll.slice(0, 4);
-  const live = Object.values(data.live || {});
-  const past = Object.values(data.past || {});
-
-  return (
-    <div className="space-y-16 animate-in slide-in-from-bottom-4 duration-500 px-2">
-      {live.length > 0 && (
-        <section>
-          <h2 className="text-[10px] font-black text-green-500 uppercase tracking-[0.4em] mb-6 flex items-center gap-3">
-            <div className="w-2.5 h-2.5 bg-green-500 rounded-full animate-ping shadow-lg shadow-green-500/50" /> Live Events
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {live.map(t => <DashCard key={t.id} t={t} isAdmin={isAdmin} onSelect={onSelect} onEdit={onEdit} />)}
-          </div>
-        </section>
-      )}
-
-      <section>
-        <h2 className="text-[10px] font-black text-zinc-400 dark:text-zinc-600 uppercase tracking-[0.4em] mb-6 flex items-center gap-3">
-          <Calendar size={18} /> Upcoming
-        </h2>
-        {futureAll.length > 0 ? (
-          <>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {future.map(t => <DashCard key={t.id} t={t} isAdmin={isAdmin} onSelect={onSelect} onEdit={onEdit} />)}
-            </div>
-            {futureAll.length > 4 && (
-              <div className="mt-8 text-center">
-                <button
-                  onClick={() => setShowAllFuture(!showAllFuture)}
-                  className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 hover:text-orange-500 transition border-b-2 border-transparent hover:border-orange-500 pb-1"
-                >
-                  {showAllFuture ? 'Show Less' : `Show All (${futureAll.length})`}
-                </button>
-              </div>
-            )}
-          </>
-        ) : <div className="p-16 text-center rounded-3xl border-2 border-dashed border-zinc-300 dark:border-zinc-800 text-zinc-400 text-xs font-black uppercase tracking-[0.3em]">No Upcoming Events</div>}
-      </section>
-
-      {past.length > 0 && (
-        <section>
-          <button onClick={() => setShowPast(!showPast)} className="w-full flex items-center justify-between group py-6 border-t border-zinc-300 dark:border-zinc-800 transition-colors hover:border-zinc-400">
-            <h2 className="text-[10px] font-black text-zinc-400 dark:text-zinc-600 uppercase tracking-[0.4em] mb-6 flex items-center gap-3"><History size={18} />Archive</h2>
-            {showPast ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-          </button>
-          {showPast && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4 opacity-75 hover:opacity-100 transition-opacity">
-              {past.map(t => <DashCard key={t.id} t={t} isAdmin={isAdmin} onSelect={onSelect} onEdit={onEdit} />)}
-            </div>
-          )}
-        </section>
-      )}
     </div>
   );
 };
@@ -327,8 +266,6 @@ const BracketView = ({ matches, onMatchClick }) => {
     const rounds = {};
     list.forEach(m => { if (!rounds[m.round]) rounds[m.round] = []; rounds[m.round].push(m); });
 
-    // LOSERS FIX: Filter out rounds that don't have any matches with a 'number'
-    // This removes the "ghost columns" pushing the losers bracket right.
     return Object.keys(rounds)
       .sort((a, b) => a - b)
       .filter(r => rounds[r].some(m => m.number))
@@ -364,7 +301,6 @@ const BracketView = ({ matches, onMatchClick }) => {
           )}
         </div>
 
-        {/* Finals - Column separation prevents diagonal wonky lines */}
         {finals.length > 0 && (
           <div className="flex flex-col justify-center items-center gap-4 relative z-10 min-w-[280px]">
             <div className="absolute top-1/2 -translate-y-[calc(50%+140px)] flex items-center gap-2 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border border-orange-200 dark:border-orange-800 shadow-sm">
@@ -387,7 +323,7 @@ const MatchCard = ({ match, onClick }) => {
     <div
       id={`match-${match.id}`}
       onClick={() => !isPending && onClick(match)}
-      className={`w-64 bg-white dark:bg-zinc-900 rounded-xl border-2 ${match.winner ? 'border-orange-500 ring-4 ring-orange-500/10' : 'border-zinc-300 dark:border-zinc-800'} shadow-sm ${!isPending ? 'cursor-pointer hover:-translate-y-1 transition duration-200 group' : 'opacity-80 cursor-default'} overflow-hidden transition-all`}
+      className={`w-64 bg-white dark:bg-zinc-900 rounded-xl border-2 ${match.winner ? 'border-orange-500 ring-4 ring-orange-500/10' : 'border-zinc-300 dark:border-zinc-700'} shadow-sm ${!isPending ? 'cursor-pointer hover:-translate-y-1 transition duration-200 group' : 'opacity-80 cursor-default'} overflow-hidden transition-all`}
     >
       <div className="bg-zinc-50 dark:bg-zinc-950/50 px-3 py-2 flex justify-between items-center border-b border-zinc-200 dark:border-zinc-800">
         <div className="flex items-center gap-2">
@@ -399,11 +335,11 @@ const MatchCard = ({ match, onClick }) => {
       <div className="p-3 space-y-1.5">
         <div className={`flex justify-between items-center ${match.winner === match.p1 ? 'text-orange-600 dark:text-orange-500 font-black' : 'text-zinc-900 dark:text-zinc-400 font-bold'}`}>
           <span className="truncate text-xs uppercase tracking-tight font-bold">{match.p1 || match.p1_label}</span>
-          <span className="bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded text-[10px] font-black">{match.p1_sets}</span>
+          <span className="bg-gray-100 dark:bg-zinc-800 px-2 py-0.5 rounded text-[10px] font-black">{match.p1_sets}</span>
         </div>
         <div className={`flex justify-between items-center ${match.winner === match.p2 ? 'text-orange-600 dark:text-orange-500 font-black' : 'text-zinc-900 dark:text-zinc-400 font-bold'}`}>
           <span className="truncate text-xs uppercase tracking-tight font-bold">{match.p2 || match.p2_label}</span>
-          <span className="bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded text-[10px] font-black">{match.p2_sets}</span>
+          <span className="bg-gray-100 dark:bg-zinc-800 px-2 py-0.5 rounded text-[10px] font-black">{match.p2_sets}</span>
         </div>
       </div>
     </div>
@@ -419,10 +355,10 @@ const ScheduleView = ({ schedule, onMatchClick }) => {
   );
 
   return (
-    <div className="h-full overflow-y-auto overflow-x-hidden relative flex flex-col">
-      {/* STICKY SEARCH BAR */}
-      <div className="sticky top-0 z-20 bg-zinc-50 dark:bg-zinc-950 p-6 pb-2">
-        <div className="relative group max-w-3xl mx-auto w-full">
+    <div className="h-full overflow-hidden relative flex flex-col">
+      {/* STICKY HEADER - BG TRANSPARENT */}
+      <div className="bg-transparent p-6 pb-0 shrink-0 z-20">
+        <div className="relative group max-w-3xl mx-auto w-full mb-6">
           <input
             placeholder="Search teams..."
             className="w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 rounded-2xl p-4 pl-12 outline-none focus:ring-2 focus:ring-orange-500 transition shadow-sm text-zinc-900 dark:text-white font-bold"
@@ -433,57 +369,174 @@ const ScheduleView = ({ schedule, onMatchClick }) => {
         </div>
       </div>
 
-      <div className="p-6 pt-2 max-w-4xl mx-auto w-full space-y-3 pb-32">
-        {filtered.map(m => (
-          <div key={m.id} className="bg-white dark:bg-zinc-900 p-4 rounded-2xl border border-zinc-300 dark:border-zinc-800 shadow-sm flex items-center justify-between group transition-all hover:border-orange-500/30">
-            <div className="flex gap-6 items-center">
-              <div className="text-center min-w-[70px]">
-                <div className="text-xl font-black font-mono text-zinc-900 dark:text-white leading-none mb-1">{m.time}</div>
-                <div className="text-[9px] font-black text-white px-2 py-0.5 rounded uppercase tracking-wider" style={{ background: stringToColor(m.court) }}>{m.court}</div>
-              </div>
-              <div>
-                <div className="font-black text-base uppercase tracking-tight text-zinc-900 dark:text-zinc-100">
-                  {m.p1 || <span className="text-zinc-400 italic lowercase font-medium">{m.p1_label}</span>}
-                  <span className="text-zinc-300 dark:text-zinc-700 mx-2 text-xs font-black">VS</span>
-                  {m.p2 || <span className="text-zinc-400 italic lowercase font-medium">{m.p2_label}</span>}
+      {/* MASKED SCROLL LIST: Advanced opacity fade at the top */}
+      <div className="flex-1 overflow-y-auto overflow-x-hidden p-6 pt-2 pb-32 [mask-image:linear-gradient(to_bottom,transparent_0%,black_100px)]">
+        <div className="max-w-4xl mx-auto w-full space-y-3">
+          {filtered.map(m => (
+            <div key={m.id} className="bg-white dark:bg-zinc-900 p-4 rounded-2xl border border-zinc-300 dark:border-zinc-800 shadow-sm flex items-center justify-between group transition-all hover:border-orange-500/30">
+              <div className="flex gap-6 items-center">
+                <div className="text-center min-w-[70px]">
+                  <div className="text-xl font-black font-mono text-zinc-900 dark:text-white leading-none mb-1">{m.time}</div>
+                  <div className="text-[9px] font-black text-white px-2 py-0.5 rounded uppercase tracking-wider" style={{ background: stringToColor(m.court) }}>{m.court}</div>
                 </div>
-                <div className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mt-1">Match #{m.number} • {m.bracket} Round {m.round}</div>
+                <div>
+                  <div className="font-black text-base uppercase tracking-tight flex items-center gap-2 flex-wrap">
+                    {/* FIXED: Trophy logic refined to ensure no placeholders show icons */}
+                    <span className={`${m.status === "Finished" && m.winner === m.p1 && m.p1 ? 'text-orange-600 dark:text-orange-500 flex items-center gap-1.5' : 'text-zinc-900 dark:text-zinc-100'}`}>
+                      {m.p1 || <span className="text-zinc-400 italic lowercase font-medium">{m.p1_label}</span>}
+                      {m.status === "Finished" && m.winner === m.p1 && m.p1 && <Trophy size={14} className="text-orange-500" />}
+                    </span>
+                    <span className="text-zinc-300 dark:text-zinc-700 text-xs font-black px-1">VS</span>
+                    <span className={`${m.status === "Finished" && m.winner === m.p2 && m.p2 ? 'text-orange-600 dark:text-orange-500 flex items-center gap-1.5' : 'text-zinc-900 dark:text-zinc-100'}`}>
+                      {m.p2 || <span className="text-zinc-400 italic lowercase font-medium">{m.p2_label}</span>}
+                      {m.status === "Finished" && m.winner === m.p2 && m.p2 && <Trophy size={14} className="text-orange-500" />}
+                    </span>
+                  </div>
+                  <div className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mt-1">Match #{m.number} • {m.bracket} Round {m.round}</div>
+                </div>
+              </div>
+              <div className="flex items-center gap-4">
+                {m.winner ? (
+                  /* FIXED: Finished match results are clickable for editing */
+                  <button onClick={() => onMatchClick(m)} className="text-right shrink-0 hover:bg-zinc-50 dark:hover:bg-zinc-800 p-2 px-3 rounded-xl transition group border border-transparent hover:border-zinc-200 dark:hover:border-zinc-700">
+                    <div className="text-orange-500 font-black text-[10px] uppercase tracking-wider mb-0.5 flex items-center justify-end gap-1">Finished</div>
+                    <div className="text-sm font-black font-mono text-zinc-900 dark:text-zinc-300">{m.p1_sets} - {m.p2_sets}</div>
+                  </button>
+                ) : (m.p1 && m.p2) && (
+                  <button onClick={() => onMatchClick(m)} className="bg-orange-600 hover:bg-orange-500 text-white text-[10px] font-black uppercase px-5 py-2.5 rounded-xl transition shadow-lg shadow-orange-600/20 active:scale-95 shrink-0">Report</button>
+                )}
               </div>
             </div>
-            <div className="flex items-center gap-4">
-              {m.winner ? (
-                <div className="text-right shrink-0">
-                  <div className="text-orange-500 font-black text-[10px] uppercase tracking-wider mb-0.5">Finished</div>
-                  <div className="text-sm font-black font-mono text-zinc-900 dark:text-zinc-300">{m.p1_sets} - {m.p2_sets}</div>
-                </div>
-              ) : (m.p1 && m.p2) && (
-                <button onClick={() => onMatchClick(m)} className="bg-orange-600 hover:bg-orange-500 text-white text-[10px] font-black uppercase px-5 py-2.5 rounded-xl transition shadow-lg shadow-orange-600/20 active:scale-95 shrink-0">Report</button>
-              )}
-            </div>
-          </div>
-        ))}
-        {filtered.length === 0 && <div className="text-center py-20 text-zinc-400 font-black uppercase tracking-widest text-xs">No matching matches found</div>}
+          ))}
+          {filtered.length === 0 && <div className="text-center py-20 text-zinc-400 font-black uppercase tracking-widest text-xs">No matching matches found</div>}
+        </div>
       </div>
+    </div>
+  );
+};
+
+// --- DASHBOARD COMPONENTS ---
+
+const DashCard = ({ t, isAdmin, onSelect, onEdit }) => (
+  <div onClick={() => onSelect(t.id)} className="bg-white dark:bg-zinc-900 rounded-3xl p-5 shadow-sm border border-zinc-200 dark:border-zinc-800 cursor-pointer hover:shadow-2xl hover:-translate-y-1.5 transition-all relative overflow-hidden group">
+    <div className="absolute top-0 left-0 w-2 h-full bg-orange-600 group-hover:w-3 transition-all"></div>
+    <div className="flex justify-between items-start mb-4">
+      <h3 className="font-black text-2xl text-zinc-900 dark:text-white truncate pr-4 leading-none">{t.name}</h3>
+      {isAdmin && <button onClick={(e) => { e.stopPropagation(); onEdit(t.id); }} className="text-zinc-300 hover:text-orange-500 transition p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-2xl shrink-0"><SlidersHorizontal size={18} /></button>}
+    </div>
+    <div className="space-y-4">
+      <div className="flex items-center gap-3 text-zinc-800 dark:text-zinc-200 font-bold text-base tracking-tight">
+        <div className="p-1.5 bg-zinc-50 dark:bg-zinc-800 rounded-lg"><Calendar size={20} className="text-orange-600 shrink-0" /></div>
+        <span>{t.date} <span className="text-zinc-300 dark:text-zinc-700 mx-1">/</span> {t.start_time}</span>
+      </div>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3 text-zinc-800 dark:text-zinc-200 font-bold text-base tracking-tight">
+          <div className="p-1.5 bg-zinc-50 dark:bg-zinc-800 rounded-lg"><Users size={20} className="text-orange-600 shrink-0" /></div>
+          <span>{t.team_count} Teams</span>
+        </div>
+        <span className="bg-zinc-100 dark:bg-zinc-800 px-3 py-1.5 rounded-full text-[11px] font-black uppercase tracking-widest border border-zinc-200 dark:border-zinc-700 text-zinc-500">{t.type}</span>
+      </div>
+    </div>
+  </div>
+);
+
+const Dashboard = ({ data, onSelect, onEdit, isAdmin, backendDown }) => {
+  const [showPast, setShowPast] = useState(false);
+  const [showAllFuture, setShowAllFuture] = useState(false);
+
+  const futureAll = Object.values(data.future || {});
+  const future = showAllFuture ? futureAll : futureAll.slice(0, 4);
+  const live = Object.values(data.live || {});
+  const past = Object.values(data.past || {});
+
+  return (
+    <div className="space-y-16 animate-in slide-in-from-bottom-4 duration-500 px-2">
+      <ConnectivityAlert backendDown={backendDown} />
+
+      {live.length > 0 && (
+        <section>
+          <h2 className="text-[10px] font-black text-green-500 uppercase tracking-[0.4em] mb-6 flex items-center gap-3">
+            <div className="w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse shadow-lg shadow-green-500/50" /> Live Events
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {live.map(t => <DashCard key={t.id} t={t} isAdmin={isAdmin} onSelect={onSelect} onEdit={onEdit} />)}
+          </div>
+        </section>
+      )}
+
+      <section>
+        <h2 className="text-[10px] font-black text-zinc-400 dark:text-zinc-600 uppercase tracking-[0.4em] mb-6 flex items-center gap-3">
+          <Calendar size={18} /> Upcoming
+        </h2>
+        {futureAll.length > 0 ? (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {future.map(t => <DashCard key={t.id} t={t} isAdmin={isAdmin} onSelect={onSelect} onEdit={onEdit} />)}
+            </div>
+            {futureAll.length > 4 && (
+              <div className="mt-8 text-center">
+                <button
+                  onClick={() => setShowAllFuture(!showAllFuture)}
+                  className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 hover:text-orange-500 transition border-b-2 border-transparent hover:border-orange-500 pb-1"
+                >
+                  {showAllFuture ? 'Show Less' : `Show All (${futureAll.length})`}
+                </button>
+              </div>
+            )}
+          </>
+        ) : <div className="p-16 text-center rounded-3xl border-2 border-dashed border-zinc-300 dark:border-zinc-800 text-zinc-400 text-xs font-black uppercase tracking-[0.3em]">No Upcoming Events</div>}
+      </section>
+
+      {past.length > 0 && (
+        <section>
+          <button onClick={() => setShowPast(!showPast)} className="w-full flex items-center justify-between group py-6 border-t border-zinc-300 dark:border-zinc-800 transition-colors hover:border-zinc-400">
+            <h2 className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.4em]">Archive</h2>
+            {showPast ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+          </button>
+          {showPast && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4 opacity-75 hover:opacity-100 transition-opacity">
+              {past.map(t => <DashCard key={t.id} t={t} isAdmin={isAdmin} onSelect={onSelect} onEdit={onEdit} />)}
+            </div>
+          )}
+        </section>
+      )}
     </div>
   );
 };
 
 // --- MAIN APP ---
 export default function App() {
-  const [view, setView] = useState(() => localStorage.getItem('volleyViewMode') || 'dashboard');
-  const [tId, setTId] = useState(() => localStorage.getItem('volleySelectedId') || null);
+  const [view, setView] = useState(() => {
+    // SHAREABLE LINK SUPPORT: Check URL for ID on mount
+    const params = new URLSearchParams(window.location.search);
+    return params.has('id') ? 'tournament' : (localStorage.getItem('volleyViewMode') || 'dashboard');
+  });
+  const [tId, setTId] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('id') || (localStorage.getItem('volleySelectedId') || null);
+  });
   const [data, setData] = useState({ live: {}, future: {}, past: {} });
   const [tData, setTData] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [tab, setTab] = useState(() => localStorage.getItem('volleyViewTab') || 'bracket');
   const [isAdmin, setIsAdmin] = useState(false);
   const [darkMode, setDarkMode] = useState(() => localStorage.theme === 'dark');
+  const [backendDown, setBackendDown] = useState(false);
 
   const tIdRef = useRef(tId);
   useEffect(() => {
     tIdRef.current = tId;
-    if (tId) localStorage.setItem('volleySelectedId', tId);
-    else localStorage.removeItem('volleySelectedId');
+    if (tId) {
+      localStorage.setItem('volleySelectedId', tId);
+      const url = new URL(window.location);
+      url.searchParams.set('id', tId);
+      window.history.replaceState({}, '', url);
+    } else {
+      localStorage.removeItem('volleySelectedId');
+      const url = new URL(window.location);
+      url.searchParams.delete('id');
+      window.history.replaceState({}, '', url);
+    }
   }, [tId]);
 
   useEffect(() => { localStorage.setItem('volleyViewMode', view); }, [view]);
@@ -503,12 +556,34 @@ export default function App() {
           if (msg.type === 'dashboard_update') loadDashboard();
           if (msg.type === 'tournament_update' && msg.id === tIdRef.current) fetchTournament(msg.id);
         };
-        ws.onclose = () => setTimeout(connect, 3000);
-      } catch (err) { setTimeout(connect, 5000); }
+        ws.onclose = () => {
+          // FIXED: Set offline state immediately on WS close if caused by server error
+          setBackendDown(true);
+          setTimeout(connect, 5000);
+        };
+      } catch (err) {
+        setBackendDown(true);
+        setTimeout(connect, 5000);
+      }
     };
     connect();
     return () => { if (ws) ws.close(); };
   }, []);
+
+  // PROACTIVE MONITORING: Pings health endpoint or re-loads active view to catch dropouts
+  useEffect(() => {
+    const monitor = setInterval(() => {
+      if (backendDown) {
+        checkAuth();
+        loadDashboard();
+        if (tIdRef.current) fetchTournament(tIdRef.current);
+      } else {
+        // Periodically check auth to ensure session and server are alive
+        checkAuth();
+      }
+    }, 5000); // More aggressive check
+    return () => clearInterval(monitor);
+  }, [backendDown]);
 
   useEffect(() => {
     const root = window.document.documentElement;
@@ -516,33 +591,56 @@ export default function App() {
     if (darkMode) {
       root.classList.add('dark');
       localStorage.setItem('theme', 'dark');
-      // FIX FOR IOS WHITE BLEED:
-      root.style.backgroundColor = '#09090b'; // zinc-950
+      root.style.backgroundColor = '#09090b';
       body.style.backgroundColor = '#09090b';
     } else {
       root.classList.remove('dark');
       localStorage.setItem('theme', 'light');
-      root.style.backgroundColor = '#fafafa'; // zinc-50
+      root.style.backgroundColor = '#fafafa';
       body.style.backgroundColor = '#fafafa';
     }
   }, [darkMode]);
 
   const checkAuth = async () => {
     if (getToken()) {
-      try { const res = await api.get('/auth/check'); setIsAdmin(res.is_admin); }
-      catch { setIsAdmin(false); }
+      try {
+        const res = await api.get('/auth/check');
+        setIsAdmin(res.is_admin);
+        setBackendDown(false);
+      }
+      catch (e) {
+        setIsAdmin(false);
+        if (e.detail === "network_error") setBackendDown(true);
+      }
+    } else {
+      // Ping tournaments just to check connectivity if not logged in
+      try { await api.get('/tournaments'); setBackendDown(false); }
+      catch (e) { if (e.detail === "network_error") setBackendDown(true); }
     }
   };
 
   const loadDashboard = async () => {
-    try { const res = await api.get('/tournaments'); setData(res); } catch (e) { }
+    try {
+      const res = await api.get('/tournaments');
+      setData(res);
+      setBackendDown(false);
+    } catch (e) {
+      if (e.detail === "network_error") setBackendDown(true);
+    }
   };
 
   const fetchTournament = async (id) => {
     try {
       const res = await api.get(`/tournaments/${id}`);
       setTData(prev => JSON.stringify(prev) === JSON.stringify(res) ? prev : res);
-    } catch (e) { }
+      setBackendDown(false);
+    } catch (e) {
+      if (e.detail === "network_error") setBackendDown(true);
+      else if (e.detail && e.detail.includes("Not found")) {
+        setTId(null);
+        setView('dashboard');
+      }
+    }
   };
 
   useEffect(() => {
@@ -570,26 +668,28 @@ export default function App() {
       const res = await api.postForm('/auth/token', new FormData(e.target));
       localStorage.setItem('volleyToken', res.access_token);
       setIsAdmin(true); setShowLogin(false);
-    } catch { alert("Login failed"); }
+      setBackendDown(false);
+    } catch (err) {
+      if (err.detail === "network_error") setBackendDown(true);
+      else alert("Login failed");
+    }
   };
 
   return (
-    /* FIXED MAIN CONTAINER: Use absolute positioning to lock iOS browser scroll */
     <div className="fixed inset-0 bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 transition-colors selection:bg-orange-500/30 flex flex-col overflow-hidden">
       {/* Navbar */}
       <nav className="bg-white/95 dark:bg-zinc-900/95 backdrop-blur-lg border-b border-zinc-300 dark:border-zinc-800 sticky top-0 z-[100] px-3 sm:px-6 py-3 sm:py-4 flex justify-between items-center shadow-md shrink-0">
         <div className="flex items-center gap-2 sm:gap-4 cursor-pointer group select-none shrink-0" onClick={() => { setView('dashboard'); setTId(null); }}>
           <div className="p-1.5 sm:p-2.5 bg-orange-600 rounded-xl group-hover:rotate-12 transition-transform shadow-lg shadow-orange-600/30 active:scale-90">
-            <Volleyball className="text-white" size={20} />
+            <Activity className="text-white" size={20} />
           </div>
-          {/* JUST LOGO ON MOBILE */}
           <div className="hidden sm:block">
             <h1 className="text-2xl font-black tracking-tighter leading-none text-zinc-900 dark:text-white">VolleyManager</h1>
             <p className="text-[9px] font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mt-0.5">Tournament Ops</p>
           </div>
         </div>
 
-        {/* Center Title - Condensed on mobile */}
+        {/* Center Title */}
         <div className="absolute left-1/2 -translate-x-1/2 text-center pointer-events-none w-full max-w-[140px] xs:max-w-[180px] sm:max-w-[400px]">
           <div className="font-black uppercase text-[10px] sm:text-sm tracking-[0.1em] sm:tracking-[0.3em] text-zinc-900 dark:text-white truncate leading-none mb-1">
             {view === 'tournament' ? tData?.tournament.name : 'Dashboard'}
@@ -628,15 +728,17 @@ export default function App() {
         {view === 'dashboard' ? (
           <div className="h-full overflow-y-auto pt-8 sm:pt-16 pb-32">
             <div className="container mx-auto max-w-5xl">
-              <Dashboard data={data} onSelect={(id) => { setTId(id); setView('tournament'); }} onEdit={openEdit} isAdmin={isAdmin} />
+              <Dashboard data={data} onSelect={(id) => { setTId(id); setView('tournament'); }} onEdit={openEdit} isAdmin={isAdmin} backendDown={backendDown} />
             </div>
           </div>
         ) : (
-          <div className="h-full flex flex-col overflow-hidden">
+          <div className="h-full flex flex-col overflow-hidden relative">
+            <ConnectivityAlert backendDown={backendDown} />
+
             {isLoading && !tData ? (
               <div className="flex items-center justify-center h-full flex-col gap-6">
                 <div className="relative">
-                  <Volleyball className="text-orange-100 dark:text-zinc-900" size={80} />
+                  <Activity className="text-orange-100 dark:text-zinc-900" size={80} />
                   <Loader2 className="animate-spin text-orange-600 absolute inset-0 m-auto" size={48} />
                 </div>
                 <span className="text-[11px] font-black uppercase tracking-[0.4em] text-zinc-400 animate-pulse">Syncing Bracket State...</span>
@@ -650,12 +752,12 @@ export default function App() {
         )}
       </main>
 
-      {/* Floating Action Buttons - Z-INDEX [40] (Below Nav and Modals) */}
+      {/* Floating Action Buttons */}
       <div className="fixed bottom-6 sm:bottom-8 right-6 sm:right-8 flex flex-col gap-3 sm:gap-4 z-40">
         {view === 'tournament' && (
           <button onClick={() => setTab(tab === 'bracket' ? 'schedule' : 'bracket')} className="p-4 sm:p-5 bg-orange-600 text-white rounded-[1.5rem] sm:rounded-[2rem] shadow-2xl transition hover:scale-110 active:scale-95 shadow-orange-900/40 border-2 border-orange-400/20 group relative overflow-hidden">
             <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-            {tab === 'bracket' ? <CalendarDays size={24} strokeWidth={3} className="sm:size-7" /> : <Network size={24} strokeWidth={3} className="sm:size-7" />}
+            {tab === 'bracket' ? <List size={24} strokeWidth={3} className="sm:size-7" /> : <GitMerge size={24} strokeWidth={3} className="sm:size-7" />}
           </button>
         )}
         <button onClick={() => setDarkMode(!darkMode)} title="Toggle Theme" className="p-4 sm:p-5 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-[1.5rem] sm:rounded-[2rem] shadow-2xl transition hover:scale-110 active:scale-95 border-2 border-zinc-700 dark:border-zinc-300 group">
@@ -663,7 +765,7 @@ export default function App() {
         </button>
       </div>
 
-      {/* Modals - Z-INDEX [200] */}
+      {/* Modals */}
       <Modal isOpen={showSettings} onClose={() => setShowSettings(false)} title={editTarget ? 'Modify Event' : 'Initialize Event'}>
         <SettingsForm
           tournament={editTarget}
