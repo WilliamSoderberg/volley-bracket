@@ -78,8 +78,8 @@ const Modal = ({ isOpen, onClose, title, children }) => {
   );
 };
 
-const ConnectivityAlert = ({ backendDown }) => {
-  if (!backendDown) return null;
+const ConnectivityAlert = ({ backendDown, isInitialLoad }) => {
+  if (!backendDown || isInitialLoad) return null;
   return (
     <div className="sticky top-0 z-50 px-4 pt-4 shrink-0">
       <div className="bg-red-500 text-white p-3 rounded-2xl flex items-center gap-3 shadow-xl shadow-red-900/20 border border-red-400/50">
@@ -195,7 +195,7 @@ const ScoreForm = ({ match, isAdmin, onSubmit, onClear }) => {
       {!isAdmin && (
         <div className="space-y-2">
           <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Authorization Code</label>
-          <input type="password" value={code} onChange={e => setCode(e.target.value)} placeholder="•••••" className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-800 p-3 rounded-xl text-center tracking-[0.5em] dark:text-white font-bold outline-none focus:border-orange-500" />
+          <input type="password" id="protocol-auth" value={code} onChange={e => setCode(e.target.value)} placeholder="•••••" className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-800 p-3 rounded-xl text-center tracking-[0.5em] dark:text-white font-bold outline-none focus:border-orange-500" />
         </div>
       )}
 
@@ -209,16 +209,18 @@ const ScoreForm = ({ match, isAdmin, onSubmit, onClear }) => {
         {sets.map((s, i) => (
           <div key={i} className="animate-in slide-in-from-top-1 px-1">
             <div className="flex items-center justify-center gap-2">
+              {/* FIXED: Symmetrical spacer on the left to keep score inputs perfectly centered when delete button is missing */}
+              <div className="w-[34px] shrink-0" />
               <div className="flex items-center gap-2">
                 <input type="number" value={s.p1} onChange={e => updateSet(i, 'p1', e.target.value)} className="w-16 bg-zinc-50 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-800 p-2.5 rounded-xl text-center dark:text-white font-black text-lg outline-none focus:border-orange-500 shadow-sm" />
                 <div className="w-3 h-0.5 bg-zinc-300 dark:bg-zinc-700 rounded-full shrink-0" />
                 <input type="number" value={s.p2} onChange={e => updateSet(i, 'p2', e.target.value)} className="w-16 bg-zinc-50 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-800 p-2.5 rounded-xl text-center dark:text-white font-black text-lg outline-none focus:border-orange-500 shadow-sm" />
               </div>
-              {sets.length > 1 && (
-                <button onClick={() => removeSet(i)} title="Remove Set" className="p-2 text-zinc-300 hover:text-red-500 transition shrink-0">
-                  <Trash2 size={18} />
+              {sets.length > 1 ? (
+                <button onClick={() => removeSet(i)} title="Remove Set" className="p-2 text-zinc-300 hover:text-red-500 transition shrink-0 group">
+                  <Trash2 size={18} className="group-hover:scale-110 transition-transform w-[34px]" />
                 </button>
-              )}
+              ) : <div className="w-[34px] shrink-0" />}
             </div>
           </div>
         ))}
@@ -316,14 +318,22 @@ const BracketView = ({ matches, onMatchClick }) => {
 
 const MatchCard = ({ match, onClick }) => {
   if (!match.number) return <div id={`match-${match.id}`} className="hidden" />;
+
+  const isFinished = match.status === "Finished";
+  const p1Winner = isFinished && match.winner === match.p1 && match.p1;
+  const p2Winner = isFinished && match.winner === match.p2 && match.p2;
+
+  const borderColor = isFinished
+    ? 'border-orange-500 ring-4 ring-orange-500/10'
+    : 'border-zinc-300 dark:border-zinc-700';
+
   const badgeColor = match.time ? stringToColor(match.court) : null;
-  const isPending = !match.p1 || !match.p2;
 
   return (
     <div
       id={`match-${match.id}`}
-      onClick={() => !isPending && onClick(match)}
-      className={`w-64 bg-white dark:bg-zinc-900 rounded-xl border-2 ${match.winner ? 'border-orange-500 ring-4 ring-orange-500/10' : 'border-zinc-300 dark:border-zinc-700'} shadow-sm ${!isPending ? 'cursor-pointer hover:-translate-y-1 transition duration-200 group' : 'opacity-80 cursor-default'} overflow-hidden transition-all`}
+      onClick={() => (match.p1 && match.p2) && onClick(match)}
+      className={`w-64 bg-white dark:bg-zinc-900 rounded-xl border-2 ${borderColor} shadow-sm cursor-pointer hover:-translate-y-1 transition duration-200 group overflow-hidden`}
     >
       <div className="bg-zinc-50 dark:bg-zinc-950/50 px-3 py-2 flex justify-between items-center border-b border-zinc-200 dark:border-zinc-800">
         <div className="flex items-center gap-2">
@@ -333,12 +343,13 @@ const MatchCard = ({ match, onClick }) => {
         {match.winner ? <Check className="text-orange-500" size={14} strokeWidth={4} /> : <span className="text-[10px] font-black text-zinc-800 dark:text-zinc-300 font-mono">{match.time || 'TBD'}</span>}
       </div>
       <div className="p-3 space-y-1.5">
-        <div className={`flex justify-between items-center ${match.winner === match.p1 ? 'text-orange-600 dark:text-orange-500 font-black' : 'text-zinc-900 dark:text-zinc-400 font-bold'}`}>
-          <span className="truncate text-xs uppercase tracking-tight font-bold">{match.p1 || match.p1_label}</span>
+        <div className={`flex justify-between items-center ${p1Winner ? 'text-orange-600 dark:text-orange-500 font-black' : 'text-zinc-900 dark:text-zinc-400 font-bold'}`}>
+          {/* FIXED: Placeholder labels in bracket view italicized to match schedule view */}
+          <span className="truncate text-xs uppercase tracking-tight">{match.p1 || <span className="italic opacity-50">{match.p1_label}</span>}</span>
           <span className="bg-gray-100 dark:bg-zinc-800 px-2 py-0.5 rounded text-[10px] font-black">{match.p1_sets}</span>
         </div>
-        <div className={`flex justify-between items-center ${match.winner === match.p2 ? 'text-orange-600 dark:text-orange-500 font-black' : 'text-zinc-900 dark:text-zinc-400 font-bold'}`}>
-          <span className="truncate text-xs uppercase tracking-tight font-bold">{match.p2 || match.p2_label}</span>
+        <div className={`flex justify-between items-center ${p2Winner ? 'text-orange-600 dark:text-orange-500 font-black' : 'text-zinc-900 dark:text-zinc-400 font-bold'}`}>
+          <span className="truncate text-xs uppercase tracking-tight">{match.p2 || <span className="italic opacity-50">{match.p2_label}</span>}</span>
           <span className="bg-gray-100 dark:bg-zinc-800 px-2 py-0.5 rounded text-[10px] font-black">{match.p2_sets}</span>
         </div>
       </div>
@@ -355,10 +366,13 @@ const ScheduleView = ({ schedule, onMatchClick }) => {
   );
 
   return (
-    <div className="h-full overflow-hidden relative flex flex-col">
-      {/* STICKY HEADER - BG TRANSPARENT */}
-      <div className="bg-transparent p-6 pb-0 shrink-0 z-20">
-        <div className="relative group max-w-3xl mx-auto w-full mb-6">
+    /* 1. MAIN WRAPPER: Must be relative and overflow-hidden to contain the absolute search bar */
+    <div className="h-full relative flex flex-col overflow-hidden">
+
+      {/* 2. SEARCH BAR: Absolute + Transparent. 
+        It sits on top (z-50) but doesn't have a background. */}
+      <div className="absolute top-0 inset-x-0 z-50 p-6 pb-2 bg-transparent pointer-events-none">
+        <div className="relative group max-w-3xl mx-auto w-full pointer-events-auto">
           <input
             placeholder="Search teams..."
             className="w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 rounded-2xl p-4 pl-12 outline-none focus:ring-2 focus:ring-orange-500 transition shadow-sm text-zinc-900 dark:text-white font-bold"
@@ -369,11 +383,15 @@ const ScheduleView = ({ schedule, onMatchClick }) => {
         </div>
       </div>
 
-      {/* MASKED SCROLL LIST: Advanced opacity fade at the top */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden p-6 pt-2 pb-32 [mask-image:linear-gradient(to_bottom,transparent_0%,black_100px)]">
-        <div className="max-w-4xl mx-auto w-full space-y-3">
+      {/* 3. SCROLLABLE CONTAINER: The mask is applied here. 
+        Everything in this div will fade out as it reaches the top. */}
+      <div className="h-full overflow-y-auto overflow-x-hidden [mask-image:linear-gradient(to_bottom,transparent_0px,transparent_60px,black_130px)]">
+
+        {/* 4. CONTENT AREA: We use pt-28 to push the first card below the search bar. */}
+        <div className="p-6 pt-28 max-w-4xl mx-auto w-full space-y-3 pb-32">
           {filtered.map(m => (
             <div key={m.id} className="bg-white dark:bg-zinc-900 p-4 rounded-2xl border border-zinc-300 dark:border-zinc-800 shadow-sm flex items-center justify-between group transition-all hover:border-orange-500/30">
+              {/* ... Rest of your card content (time, teams, trophy logic, buttons) ... */}
               <div className="flex gap-6 items-center">
                 <div className="text-center min-w-[70px]">
                   <div className="text-xl font-black font-mono text-zinc-900 dark:text-white leading-none mb-1">{m.time}</div>
@@ -381,7 +399,6 @@ const ScheduleView = ({ schedule, onMatchClick }) => {
                 </div>
                 <div>
                   <div className="font-black text-base uppercase tracking-tight flex items-center gap-2 flex-wrap">
-                    {/* FIXED: Trophy logic refined to ensure no placeholders show icons */}
                     <span className={`${m.status === "Finished" && m.winner === m.p1 && m.p1 ? 'text-orange-600 dark:text-orange-500 flex items-center gap-1.5' : 'text-zinc-900 dark:text-zinc-100'}`}>
                       {m.p1 || <span className="text-zinc-400 italic lowercase font-medium">{m.p1_label}</span>}
                       {m.status === "Finished" && m.winner === m.p1 && m.p1 && <Trophy size={14} className="text-orange-500" />}
@@ -397,7 +414,6 @@ const ScheduleView = ({ schedule, onMatchClick }) => {
               </div>
               <div className="flex items-center gap-4">
                 {m.winner ? (
-                  /* FIXED: Finished match results are clickable for editing */
                   <button onClick={() => onMatchClick(m)} className="text-right shrink-0 hover:bg-zinc-50 dark:hover:bg-zinc-800 p-2 px-3 rounded-xl transition group border border-transparent hover:border-zinc-200 dark:hover:border-zinc-700">
                     <div className="text-orange-500 font-black text-[10px] uppercase tracking-wider mb-0.5 flex items-center justify-end gap-1">Finished</div>
                     <div className="text-sm font-black font-mono text-zinc-900 dark:text-zinc-300">{m.p1_sets} - {m.p2_sets}</div>
@@ -408,7 +424,11 @@ const ScheduleView = ({ schedule, onMatchClick }) => {
               </div>
             </div>
           ))}
-          {filtered.length === 0 && <div className="text-center py-20 text-zinc-400 font-black uppercase tracking-widest text-xs">No matching matches found</div>}
+          {filtered.length === 0 && (
+            <div className="text-center py-20 text-zinc-400 font-black uppercase tracking-widest text-xs">
+              No matching matches found
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -434,13 +454,13 @@ const DashCard = ({ t, isAdmin, onSelect, onEdit }) => (
           <div className="p-1.5 bg-zinc-50 dark:bg-zinc-800 rounded-lg"><Users size={20} className="text-orange-600 shrink-0" /></div>
           <span>{t.team_count} Teams</span>
         </div>
-        <span className="bg-zinc-100 dark:bg-zinc-800 px-3 py-1.5 rounded-full text-[11px] font-black uppercase tracking-widest border border-zinc-200 dark:border-zinc-700 text-zinc-500">{t.type}</span>
+        <span className="bg-zinc-100 dark:bg-zinc-800 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-zinc-200 dark:border-zinc-700 text-zinc-500">{t.type}</span>
       </div>
     </div>
   </div>
 );
 
-const Dashboard = ({ data, onSelect, onEdit, isAdmin, backendDown }) => {
+const Dashboard = ({ data, onSelect, onEdit, isAdmin, backendDown, isInitialLoad }) => {
   const [showPast, setShowPast] = useState(false);
   const [showAllFuture, setShowAllFuture] = useState(false);
 
@@ -451,7 +471,7 @@ const Dashboard = ({ data, onSelect, onEdit, isAdmin, backendDown }) => {
 
   return (
     <div className="space-y-16 animate-in slide-in-from-bottom-4 duration-500 px-2">
-      <ConnectivityAlert backendDown={backendDown} />
+      <ConnectivityAlert backendDown={backendDown} isInitialLoad={isInitialLoad} />
 
       {live.length > 0 && (
         <section>
@@ -507,7 +527,6 @@ const Dashboard = ({ data, onSelect, onEdit, isAdmin, backendDown }) => {
 // --- MAIN APP ---
 export default function App() {
   const [view, setView] = useState(() => {
-    // SHAREABLE LINK SUPPORT: Check URL for ID on mount
     const params = new URLSearchParams(window.location.search);
     return params.has('id') ? 'tournament' : (localStorage.getItem('volleyViewMode') || 'dashboard');
   });
@@ -518,6 +537,7 @@ export default function App() {
   const [data, setData] = useState({ live: {}, future: {}, past: {} });
   const [tData, setTData] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [tab, setTab] = useState(() => localStorage.getItem('volleyViewTab') || 'bracket');
   const [isAdmin, setIsAdmin] = useState(false);
   const [darkMode, setDarkMode] = useState(() => localStorage.theme === 'dark');
@@ -543,10 +563,21 @@ export default function App() {
   useEffect(() => { localStorage.setItem('volleyViewTab', tab); }, [tab]);
 
   useEffect(() => {
-    checkAuth();
-    loadDashboard();
+    const startup = async () => {
+      setIsLoading(true);
+      try {
+        await Promise.all([checkAuth(), loadDashboard()]);
+        if (tIdRef.current) await fetchTournament(tIdRef.current);
+        setBackendDown(false);
+      } catch (e) {
+        if (e.detail === "network_error") setBackendDown(true);
+      } finally {
+        setIsLoading(false);
+        setIsInitialLoad(false);
+      }
+    };
+    startup();
 
-    // Persistent WebSocket connection
     let ws;
     const connect = () => {
       try {
@@ -557,7 +588,6 @@ export default function App() {
           if (msg.type === 'tournament_update' && msg.id === tIdRef.current) fetchTournament(msg.id);
         };
         ws.onclose = () => {
-          // FIXED: Set offline state immediately on WS close if caused by server error
           setBackendDown(true);
           setTimeout(connect, 5000);
         };
@@ -570,7 +600,6 @@ export default function App() {
     return () => { if (ws) ws.close(); };
   }, []);
 
-  // PROACTIVE MONITORING: Pings health endpoint or re-loads active view to catch dropouts
   useEffect(() => {
     const monitor = setInterval(() => {
       if (backendDown) {
@@ -578,12 +607,11 @@ export default function App() {
         loadDashboard();
         if (tIdRef.current) fetchTournament(tIdRef.current);
       } else {
-        // Periodically check auth to ensure session and server are alive
-        checkAuth();
+        if (!isLoading) checkAuth();
       }
-    }, 5000); // More aggressive check
+    }, 5000);
     return () => clearInterval(monitor);
-  }, [backendDown]);
+  }, [backendDown, isLoading]);
 
   useEffect(() => {
     const root = window.document.documentElement;
@@ -613,7 +641,6 @@ export default function App() {
         if (e.detail === "network_error") setBackendDown(true);
       }
     } else {
-      // Ping tournaments just to check connectivity if not logged in
       try { await api.get('/tournaments'); setBackendDown(false); }
       catch (e) { if (e.detail === "network_error") setBackendDown(true); }
     }
@@ -728,12 +755,12 @@ export default function App() {
         {view === 'dashboard' ? (
           <div className="h-full overflow-y-auto pt-8 sm:pt-16 pb-32">
             <div className="container mx-auto max-w-5xl">
-              <Dashboard data={data} onSelect={(id) => { setTId(id); setView('tournament'); }} onEdit={openEdit} isAdmin={isAdmin} backendDown={backendDown} />
+              <Dashboard data={data} onSelect={(id) => { setTId(id); setView('tournament'); }} onEdit={openEdit} isAdmin={isAdmin} backendDown={backendDown} isInitialLoad={isInitialLoad} />
             </div>
           </div>
         ) : (
           <div className="h-full flex flex-col overflow-hidden relative">
-            <ConnectivityAlert backendDown={backendDown} />
+            <ConnectivityAlert backendDown={backendDown} isInitialLoad={isInitialLoad} />
 
             {isLoading && !tData ? (
               <div className="flex items-center justify-center h-full flex-col gap-6">
