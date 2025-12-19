@@ -702,6 +702,12 @@ export default function App() {
     }
   };
 
+  const handleLogout = () => {
+    // FIXED: Only remove authentication keys, preserving 'theme'
+    localStorage.removeItem('volleyToken');
+    window.location.reload();
+  };
+
   return (
     <div className="fixed inset-0 bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 transition-colors selection:bg-orange-500/30 flex flex-col overflow-hidden">
       {/* Navbar */}
@@ -741,7 +747,7 @@ export default function App() {
                 </button>
               )}
               <div className="w-px h-5 sm:h-6 bg-zinc-200 dark:bg-zinc-800 mx-0.5 sm:mx-1" />
-              <button onClick={() => { localStorage.clear(); window.location.reload(); }} title="Sign Out" className="text-zinc-400 hover:text-red-500 transition active:scale-90 shrink-0"><LogOut size={18} sm:size={22} /></button>
+              <button onClick={handleLogout} title="Sign Out" className="text-zinc-400 hover:text-red-500 transition active:scale-90 shrink-0"><LogOut size={18} sm:size={22} /></button>
             </>
           ) : (
             <button onClick={() => setShowLogin(true)} className="text-orange-600 font-black flex items-center gap-1.5 text-[9px] sm:text-[10px] uppercase tracking-widest hover:text-orange-500 transition group p-1.5 sm:p-2 rounded-xl hover:bg-orange-50 dark:hover:bg-orange-950/20">
@@ -811,16 +817,36 @@ export default function App() {
       </Modal>
 
       <Modal isOpen={showLogin} onClose={() => setShowLogin(false)} title="System Access">
-        <form onSubmit={handleLogin} className="space-y-6">
+        <form
+          key={showLogin}
+          onSubmit={handleLogin}
+          className="space-y-6"
+          autoComplete="on"
+        >
           <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">Identity</label>
-            <input name="username" placeholder="Admin UID" required className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-800 p-4 rounded-2xl dark:text-white outline-none focus:border-orange-500 transition font-bold" />
+            <label htmlFor="login-username" className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">Identity</label>
+            <input
+              id="login-username"
+              name="username"
+              placeholder="Admin UID"
+              required
+              autoComplete="username"
+              className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-800 p-4 rounded-2xl dark:text-white outline-none focus:border-orange-500 transition font-bold"
+            />
           </div>
           <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">Secret Key</label>
-            <input name="password" type="password" placeholder="••••••••" required className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-800 p-4 rounded-2xl dark:text-white outline-none focus:border-orange-500 transition font-bold" />
+            <label htmlFor="login-password" className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">Secret Key</label>
+            <input
+              id="login-password"
+              name="password"
+              type="password"
+              placeholder="••••••••"
+              required
+              autoComplete="current-password"
+              className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-800 p-4 rounded-2xl dark:text-white outline-none focus:border-orange-500 transition font-bold"
+            />
           </div>
-          <button className="w-full bg-orange-600 hover:bg-orange-500 text-white py-5 rounded-2xl font-black uppercase tracking-[0.2em] text-xs shadow-2xl shadow-orange-600/30 transition active:scale-95 mt-4">Authenticate</button>
+          <button type="submit" className="w-full bg-orange-600 hover:bg-orange-500 text-white py-5 rounded-2xl font-black uppercase tracking-[0.2em] text-xs shadow-2xl shadow-orange-600/30 transition active:scale-95 mt-4">Authenticate</button>
         </form>
       </Modal>
     </div>
