@@ -66,6 +66,7 @@ def list_tournaments(db=Depends(get_db)):
                 "start_time": full.get("start_time", ""),
                 "type": full.get("type", "double"),
                 "team_count": len(full.get("teams", [])),
+                "court_count": len(full.get("courts", [])),
             }
         except:
             continue

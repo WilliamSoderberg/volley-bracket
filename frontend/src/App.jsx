@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  Activity, List, GitMerge, Moon, Sun,
-  Plus, SlidersHorizontal, X, Trophy, Clock, Lock, LogOut,
-  Calendar, History, Search, Trash2, Users,
-  Check, ChevronDown, ChevronUp, Loader2, MapPin, AlertCircle
-} from 'lucide-react';
+  VolleyballIcon, TreeStructureIcon, CalendarBlankIcon,
+  CalendarDotsIcon, SunIcon, MoonIcon, UsersFourIcon,
+  CourtBasketballIcon, ClockCounterClockwiseIcon, SignInIcon,
+  SignOutIcon, SlidersHorizontalIcon, PlusIcon, XIcon, TrophyIcon,
+  MagnifyingGlassIcon, ClockIcon, EraserIcon, LineVerticalIcon,
+  CircleNotchIcon, CheckCircleIcon, CaretDownIcon, CaretUpIcon
+} from "@phosphor-icons/react"
 
 // --- API CONFIGURATION ---
 const getBackendHost = () => {
@@ -59,18 +61,23 @@ const stringToColor = (str) => {
 
 // --- UI COMPONENTS ---
 
-const Modal = ({ isOpen, onClose, title, children }) => {
+const Modal = ({ isOpen, onClose, title, children, icon: Icon, customWidth = "max-w-sm" }) => {
   if (!isOpen) return null;
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-sm border border-zinc-300 dark:border-zinc-800 max-h-[90vh] overflow-y-auto">
-        <div className="p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-black text-zinc-900 dark:text-white flex items-center gap-2 uppercase tracking-tight">{title}</h2>
-            <button onClick={onClose} className="text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition p-1 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800">
-              <X size={24} />
-            </button>
-          </div>
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className={`bg-white dark:bg-zinc-900 rounded-xl shadow-2xl w-full ${customWidth} border border-zinc-200 dark:border-zinc-700 overflow-hidden max-h-[95vh] flex flex-col`}>
+        <div className="p-6 overflow-y-auto">
+          {title && (
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-bold flex items-center gap-2 text-zinc-900 dark:text-white">
+                {Icon && <Icon weight="duotone" className="text-orange-500" size={24} />}
+                {title}
+              </h2>
+              <button onClick={onClose} className="text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition">
+                <XIcon size={24} />
+              </button>
+            </div>
+          )}
           {children}
         </div>
       </div>
@@ -106,47 +113,140 @@ const SettingsForm = ({ tournament, onSubmit, onDelete }) => {
     const formData = new FormData(e.target);
     const data = Object.fromEntries(formData.entries());
     const teams = data.teams.split('\n').filter(t => t.trim().length > 0);
-    if (teams.length < 2) { setError("At least 2 teams required."); setIsSubmitting(false); return; }
+
+    if (teams.length < 2) {
+      setError("You need at least 2 teams to create a bracket.");
+      setIsSubmitting(false);
+      return;
+    }
 
     try {
       if (tournament) await api.put(`/tournaments/${tournament.id}`, data);
       else await api.post('/tournaments', data);
       onSubmit();
-    } catch (err) { setError(typeof err.detail === 'string' ? err.detail : "Error saving"); }
+    } catch (err) { setError(typeof err.detail === 'string' ? err.detail : "Error saving tournament"); }
     finally { setIsSubmitting(false); }
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      {error && <div className="bg-red-50 text-red-600 p-3 rounded-xl text-center text-sm font-bold border border-red-100">{error}</div>}
-      <div>
-        <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Name</label>
-        <input name="name" defaultValue={tournament?.name} required className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-800 p-3 rounded-xl dark:text-white outline-none focus:border-orange-500 font-bold" />
-      </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Access Code</label>
-          <input name="code" defaultValue={tournament?.code} required className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-800 p-3 rounded-xl text-center font-mono dark:text-white font-bold" />
+      {error && (
+        <div className="text-xs text-red-500 dark:text-red-400 text-center mb-4 bg-red-50 dark:bg-red-900/10 p-2 rounded border border-red-200 dark:border-red-900/30">
+          {error}
         </div>
+      )}
+
+      <div className="space-y-4">
         <div>
-          <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Type</label>
-          <select name="type" defaultValue={tournament?.type || "double"} className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-800 p-3 rounded-xl dark:text-white outline-none font-bold">
-            <option value="double">Double Elimination</option>
-            <option value="single">Single Elimination</option>
-          </select>
+          <label className="text-xs font-bold text-zinc-500 uppercase">Name</label>
+          <input
+            name="name"
+            defaultValue={tournament?.name}
+            required
+            placeholder="My Awesome Tournament"
+            autoFocus
+            className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-600 rounded p-2 focus:border-orange-500 outline-none transition text-zinc-900 dark:text-white"
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="font-bold text-zinc-500 text-xs uppercase">Code</label>
+            <input
+              name="code"
+              defaultValue={tournament?.code}
+              required
+              placeholder="••••"
+              autoComplete="off"
+              className="w-full h-10 bg-zinc-50 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-600 rounded p-2 text-center font-mono focus:border-orange-500 outline-none transition text-zinc-900 dark:text-white"
+            />
+          </div>
+          <div>
+            <label className="font-bold text-zinc-500 text-xs uppercase">Type</label>
+            <select
+              name="type"
+              defaultValue={tournament?.type || "double"}
+              className="w-full h-10 bg-zinc-50 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-600 rounded p-2 focus:border-orange-500 outline-none transition text-zinc-900 dark:text-white"
+            >
+              <option value="double">Double Elimination</option>
+              <option value="single">Single Elimination</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-7 gap-4">
+          <div className="col-span-2">
+            <label className="text-xs font-bold text-zinc-500 uppercase mb-1 block">Duration</label>
+            <input
+              type="number"
+              name="duration"
+              defaultValue={tournament?.match_duration || 30}
+              min="0"
+              className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-600 rounded p-2 h-10 text-base appearance-none focus:border-orange-500 outline-none transition text-zinc-900 dark:text-white"
+            />
+          </div>
+          <div className="col-span-2">
+            <label className="text-xs font-bold text-zinc-500 uppercase mb-1 block">Start Time</label>
+            <input
+              type="time"
+              name="start_time"
+              defaultValue={tournament?.start_time || "09:00"}
+              className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-600 rounded p-2 h-10 text-base appearance-none focus:border-orange-500 outline-none transition text-zinc-900 dark:text-white"
+            />
+          </div>
+          <div className="col-span-3">
+            <label className="text-xs font-bold text-zinc-500 uppercase mb-1 block">Date</label>
+            <input
+              type="date"
+              name="date"
+              defaultValue={tournament?.date || new Date().toISOString().split('T')[0]}
+              className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-800 rounded p-2 h-10 text-base appearance-none focus:border-orange-500 outline-none transition text-zinc-900 dark:text-white"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className="text-xs font-bold text-zinc-500 uppercase">Courts</label>
+          <input
+            name="courts"
+            placeholder="Center Court, Court 1"
+            defaultValue={tournament?.courts?.join(', ')}
+            required
+            className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-600 rounded p-2 focus:border-orange-500 outline-none transition text-zinc-900 dark:text-white"
+          />
+        </div>
+
+        <div>
+          <label className="text-xs font-bold text-zinc-500 uppercase">Teams</label>
+          <textarea
+            name="teams"
+            placeholder="One team per line..."
+            defaultValue={tournament?.teams?.join('\n')}
+            rows={5}
+            required
+            className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-600 rounded p-2 font-mono text-sm focus:border-orange-500 outline-none transition text-zinc-900 dark:text-white resize-none"
+          />
         </div>
       </div>
-      <div className="grid grid-cols-3 gap-4">
-        <input type="number" name="duration" placeholder="Min" defaultValue={tournament?.match_duration || 30} className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-800 p-3 rounded-xl dark:text-white font-bold" />
-        <input type="time" name="start_time" defaultValue={tournament?.start_time || "09:00"} className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-800 p-3 rounded-xl dark:text-white font-bold" />
-        <input type="date" name="date" defaultValue={tournament?.date || new Date().toISOString().split('T')[0]} className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-800 p-3 rounded-xl dark:text-white font-bold" />
-      </div>
-      <input name="courts" placeholder="Courts (e.g. Center, Court 1)" defaultValue={tournament?.courts?.join(', ')} required className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-800 p-3 rounded-xl dark:text-white font-bold" />
-      <textarea name="teams" placeholder="Teams (one per line)" defaultValue={tournament?.teams?.join('\n')} rows={5} required className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-800 p-3 rounded-xl font-mono text-sm dark:text-white font-bold" />
-      <div className="flex justify-between pt-4 border-t border-zinc-200 dark:border-zinc-800">
-        {tournament && <button type="button" onClick={() => onDelete(tournament.id)} className="text-red-600 text-sm font-black uppercase tracking-widest hover:underline">Delete Tournament</button>}
-        <button disabled={isSubmitting} type="submit" className="bg-orange-600 hover:bg-orange-500 text-white px-8 py-3 rounded-xl font-black uppercase tracking-widest text-xs transition active:scale-95 ml-auto shadow-lg shadow-orange-600/20">
-          {isSubmitting ? 'Saving...' : (tournament ? 'Save Changes' : 'Create Tournament')}
+
+      <div className="flex justify-between mt-4 pt-4 border-t border-zinc-200 dark:border-zinc-800 flex-wrap gap-y-4">
+        {tournament && (
+          <button
+            type="button"
+            onClick={() => onDelete(tournament.id)}
+            className="text-red-500 text-sm hover:underline h-5 self-end"
+          >
+            Delete Tournament
+          </button>
+        )}
+        {!tournament && <div className="hidden"></div>}
+
+        <button
+          disabled={isSubmitting}
+          type="submit"
+          className="bg-orange-600 hover:bg-orange-500 text-white px-6 py-2 rounded font-bold shadow-lg shadow-orange-900/20 ml-auto transition active:scale-95"
+        >
+          {isSubmitting ? 'Saving...' : (tournament ? 'Save Changes' : 'Create')}
         </button>
       </div>
     </form>
@@ -175,62 +275,110 @@ const ScoreForm = ({ match, isAdmin, onSubmit, onClear }) => {
 
   return (
     <div className="space-y-6">
-      {error && <div className="bg-red-50 text-red-600 p-3 rounded-xl text-center text-sm font-bold border border-red-100">{error}</div>}
-
-      <div className="flex justify-around items-center bg-zinc-50 dark:bg-zinc-950 p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-inner">
-        <div className="text-center">
-          <div className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 mb-1 w-full text-center">Time</div>
-          <div className="text-lg font-black font-mono text-zinc-900 dark:text-white">{match.time || '--:--'}</div>
+      <div className="flex justify-center items-center gap-4 bg-zinc-50 dark:bg-zinc-950 p-3 rounded-lg border border-gray-200 dark:border-zinc-800 shadow-sm transition-colors">
+        <div className="flex items-center gap-2 text-sm font-mono text-zinc-600 dark:text-zinc-300">
+          <ClockIcon weight="duotone" className="text-orange-500" size={18} />
+          <span>{match.time || "10:00"}</span>
         </div>
-        <div className="w-px h-10 bg-zinc-200 dark:bg-zinc-800" />
-        <div className="text-center">
-          <div className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 mb-1 w-full text-center">Court</div>
-          <div className="text-lg font-black uppercase text-zinc-900 dark:text-white tracking-tighter flex items-center justify-center gap-2">
-            <div className="w-2.5 h-2.5 rounded-full" style={{ background: stringToColor(match.court) }} />
-            {match.court || 'TBD'}
-          </div>
+        <div className="h-4 w-px bg-zinc-300 dark:bg-zinc-800" />
+        <div className="flex items-center gap-2 text-sm font-mono text-zinc-900 dark:text-white">
+          <CourtBasketballIcon weight="duotone" className="text-orange-500" size={18} />
+          <span>{match.court || "Plan Z"}</span>
         </div>
       </div>
 
-      {!isAdmin && (
-        <div className="space-y-2">
-          <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Authorization Code</label>
-          <input type="password" id="protocol-auth" value={code} onChange={e => setCode(e.target.value)} placeholder="•••••" className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-800 p-3 rounded-xl text-center tracking-[0.5em] dark:text-white font-bold outline-none focus:border-orange-500" />
+      {error && (
+        <div className="text-xs text-red-500 dark:text-red-400 text-center bg-red-50 dark:bg-red-900/10 p-2 rounded border border-red-200 dark:border-red-900/30">
+          {error}
         </div>
       )}
 
-      <div className="grid grid-cols-3 gap-2 text-center font-black text-zinc-800 dark:text-zinc-200 items-center px-2">
-        <div className="text-xs truncate uppercase tracking-tight leading-tight">{match.p1 || match.p1_label}</div>
-        <div className="text-[10px] bg-orange-600 text-white px-2 py-1 rounded-full w-fit mx-auto shadow-lg">VS</div>
-        <div className="text-xs truncate uppercase tracking-tight leading-tight">{match.p2 || match.p2_label}</div>
+      {!isAdmin && (
+        <div className="bg-zinc-50 dark:bg-zinc-950 p-4 rounded-lg border border-gray-200 dark:border-zinc-800">
+          <label className="block text-xs font-bold text-orange-500 uppercase mb-2">Tournament Code</label>
+          <input
+            type="password"
+            id="scoreCode"
+            name="tournament-code"
+            value={code}
+            onChange={e => setCode(e.target.value)}
+            placeholder="•••••"
+            autoComplete="off"
+            className="w-full bg-white dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded p-3 text-center text-lg tracking-[0.5em] focus:ring-1 focus:ring-orange-500 outline-none transition text-zinc-900 dark:text-white shadow-sm"
+          />
+        </div>
+      )}
+
+      <div className="grid grid-cols-3 gap-2 text-center font-bold text-zinc-700 dark:text-zinc-200 items-center px-2">
+        <div className="break-words text-sm leading-tight">{match.p1 || match.p1_label}</div>
+        <div className="text-zinc-400 dark:text-zinc-600 text-[10px] font-bold uppercase bg-zinc-100 dark:bg-zinc-950 px-3 py-1 rounded-full w-fit mx-auto shadow-sm">VS</div>
+        <div className="break-words text-sm leading-tight">{match.p2 || match.p2_label}</div>
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
         {sets.map((s, i) => (
           <div key={i} className="animate-in slide-in-from-top-1 px-1">
             <div className="flex items-center justify-center gap-2">
-              {/* FIXED: Symmetrical spacer on the left to keep score inputs perfectly centered when delete button is missing */}
-              <div className="w-[34px] shrink-0" />
-              <div className="flex items-center gap-2">
-                <input type="number" value={s.p1} onChange={e => updateSet(i, 'p1', e.target.value)} className="w-16 bg-zinc-50 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-800 p-2.5 rounded-xl text-center dark:text-white font-black text-lg outline-none focus:border-orange-500 shadow-sm" />
-                <div className="w-3 h-0.5 bg-zinc-300 dark:bg-zinc-700 rounded-full shrink-0" />
-                <input type="number" value={s.p2} onChange={e => updateSet(i, 'p2', e.target.value)} className="w-16 bg-zinc-50 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-800 p-2.5 rounded-xl text-center dark:text-white font-black text-lg outline-none focus:border-orange-500 shadow-sm" />
+              <div className="grid grid-cols-3 gap-2 items-center justify-items-center">
+                <input
+                  type="number"
+                  min="0"
+                  pattern="[0-9]*"
+                  value={s.p1}
+                  onChange={(e) => updateSet(i, "p1", e.target.value)}
+                  className="sp1 w-full bg-gray-50 dark:bg-zinc-950 border border-gray-300 dark:border-zinc-800 p-2 rounded text-center focus:border-orange-500 outline-none text-zinc-900 dark:text-white"
+                />
+
+                {sets.length > 1 ? (
+                  <button
+                    onClick={() => removeSet(i)}
+                    title="Remove Set"
+                    className="mx-auto p-2 text-zinc-300 hover:text-red-500 transition shrink-0 group"
+                  >
+                    <EraserIcon
+                      weight="duotone"
+                      size={18}
+                      className="group-hover:scale-110 transition-transform"
+                    />
+                  </button>
+                ) : (
+                  <span className="text-zinc-400 dark:text-zinc-600 text-center font-bold">
+                    -
+                  </span>
+                )}
+
+                <input
+                  type="number"
+                  min="0"
+                  pattern="[0-9]*"
+                  value={s.p2}
+                  onChange={(e) => updateSet(i, "p2", e.target.value)}
+                  className="sp2 w-full bg-gray-50 dark:bg-zinc-950 border border-gray-300 dark:border-zinc-800 p-2 rounded text-center focus:border-orange-500 outline-none text-zinc-900 dark:text-white"
+                />
               </div>
-              {sets.length > 1 ? (
-                <button onClick={() => removeSet(i)} title="Remove Set" className="p-2 text-zinc-300 hover:text-red-500 transition shrink-0 group">
-                  <Trash2 size={18} className="group-hover:scale-110 transition-transform w-[34px]" />
-                </button>
-              ) : <div className="w-[34px] shrink-0" />}
+
             </div>
           </div>
         ))}
       </div>
 
-      <button onClick={() => setSets([...sets, { p1: '', p2: '' }])} className="w-full py-3 border-2 border-dashed border-zinc-300 dark:border-zinc-800 text-zinc-500 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] hover:border-orange-500 hover:text-orange-500 transition active:bg-orange-50 dark:active:bg-orange-900/10">+ Add Set</button>
+      <button onClick={() => setSets([...sets, { p1: '', p2: '' }])} className="w-full py-2 border border-dashed border-zinc-300 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 text-sm hover:border-orange-500 hover:text-orange-500 transition rounded">+ Add Set</button>
 
-      <div className="flex gap-3 pt-4 border-t border-zinc-100 dark:border-zinc-800">
-        {match.winner && <button onClick={() => onClear(match.id, code)} className="w-1/3 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-xl font-black uppercase tracking-widest text-[10px] transition active:scale-95 border border-red-200 dark:border-red-900/50">Clear</button>}
-        <button onClick={handleSubmit} className="flex-1 bg-orange-600 hover:bg-orange-500 text-white py-4 rounded-xl font-black uppercase tracking-widest text-[11px] shadow-xl shadow-orange-600/20 transition active:scale-95">Submit Result</button>
+      <div className="flex gap-2">
+        {match.winner && (
+          <button
+            onClick={() => onClear(match.id, code)}
+            className="w-1/3 bg-red-100 dark:bg-red-900/50 hover:bg-red-200 dark:hover:bg-red-900 text-red-600 dark:text-red-300 py-3 rounded-lg font-bold transition text-sm"
+          >
+            Clear
+          </button>
+        )}
+        <button
+          onClick={handleSubmit}
+          className={`${match.winner ? 'w-2/3' : 'w-full'} bg-orange-600 hover:bg-orange-500 py-3 rounded-lg font-bold shadow-lg shadow-orange-900/20 transition text-white active:scale-95`}
+        >
+          Submit Result
+        </button>
       </div>
     </div>
   );
@@ -258,7 +406,7 @@ const BracketView = ({ matches, onMatchClick }) => {
         const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
         const c1 = sx + (ex - sx) / 2;
         path.setAttribute("d", `M ${sx} ${sy} C ${c1} ${sy}, ${c1} ${ey}, ${ex} ${ey}`);
-        path.setAttribute("class", "stroke-zinc-300 dark:stroke-zinc-800 fill-none stroke-[2px] opacity-40");
+        path.setAttribute("class", "stroke-zinc-500 dark:stroke-zinc-400 fill-none stroke-[2px] opacity-40");
         svg.appendChild(path);
       }
     });
@@ -305,8 +453,8 @@ const BracketView = ({ matches, onMatchClick }) => {
 
         {finals.length > 0 && (
           <div className="flex flex-col justify-center items-center gap-4 relative z-10 min-w-[280px]">
-            <div className="absolute top-1/2 -translate-y-[calc(50%+140px)] flex items-center gap-2 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border border-orange-200 dark:border-orange-800 shadow-sm">
-              <Trophy size={14} /> Championship
+            <div className="absolute top-1/2 -translate-y-[calc(50%+80px)] flex items-center gap-2 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border border-orange-200 dark:border-orange-800 shadow-sm">
+              <TrophyIcon weight="duotone" size={14} /> Championship
             </div>
             {finals.map(m => <MatchCard key={m.id} match={m} onClick={() => onMatchClick(m)} />)}
           </div>
@@ -320,8 +468,8 @@ const MatchCard = ({ match, onClick }) => {
   if (!match.number) return <div id={`match-${match.id}`} className="hidden" />;
 
   const isFinished = match.status === "Finished";
-  const p1Winner = isFinished && match.winner === match.p1 && match.p1;
-  const p2Winner = isFinished && match.winner === match.p2 && match.p2;
+  const p1Winner = isFinished && match.winner === match.p1 && match.p1 && match.p1 !== "BYE";
+  const p2Winner = isFinished && match.winner === match.p2 && match.p2 && match.p2 !== "BYE";
 
   const borderColor = isFinished
     ? 'border-orange-500 ring-4 ring-orange-500/10'
@@ -340,17 +488,16 @@ const MatchCard = ({ match, onClick }) => {
           <span className="font-mono text-[10px] font-black text-zinc-500 dark:text-zinc-500 uppercase"># {match.number}</span>
           {match.time && <span className="text-[9px] font-black text-white px-1.5 py-0.5 rounded uppercase" style={{ background: badgeColor }}>{match.court}</span>}
         </div>
-        {match.winner ? <Check className="text-orange-500" size={14} strokeWidth={4} /> : <span className="text-[10px] font-black text-zinc-800 dark:text-zinc-300 font-mono">{match.time || 'TBD'}</span>}
+        {match.winner ? <CheckCircleIcon weight="duotone" className="text-orange-500" size={14} strokeWidth={4} /> : <span className="text-[10px] font-black text-zinc-800 dark:text-zinc-300 font-mono">{match.time || 'TBD'}</span>}
       </div>
       <div className="p-3 space-y-1.5">
         <div className={`flex justify-between items-center ${p1Winner ? 'text-orange-600 dark:text-orange-500 font-black' : 'text-zinc-900 dark:text-zinc-400 font-bold'}`}>
-          {/* FIXED: Placeholder labels in bracket view italicized to match schedule view */}
-          <span className="truncate text-xs uppercase tracking-tight">{match.p1 || <span className="italic opacity-50">{match.p1_label}</span>}</span>
-          <span className="bg-gray-100 dark:bg-zinc-800 px-2 py-0.5 rounded text-[10px] font-black">{match.p1_sets}</span>
+          <span className="truncate text-xs tracking-tight">{match.p1 || <span className="italic opacity-50 font-normal">{match.p1_label}</span>}</span>
+          <span className="bg-gray-100 dark:bg-zinc-950 px-2 py-0.5 rounded text-[10px] text-zinc-500 font-black">{match.p1_sets}</span>
         </div>
         <div className={`flex justify-between items-center ${p2Winner ? 'text-orange-600 dark:text-orange-500 font-black' : 'text-zinc-900 dark:text-zinc-400 font-bold'}`}>
-          <span className="truncate text-xs uppercase tracking-tight">{match.p2 || <span className="italic opacity-50">{match.p2_label}</span>}</span>
-          <span className="bg-gray-100 dark:bg-zinc-800 px-2 py-0.5 rounded text-[10px] font-black">{match.p2_sets}</span>
+          <span className="truncate text-xs tracking-tight">{match.p2 || <span className="italic opacity-50 font-normal">{match.p2_label}</span>}</span>
+          <span className="bg-gray-100 dark:bg-zinc-950 px-2 py-0.5 rounded text-[10px] text-zinc-500 font-black">{match.p2_sets}</span>
         </div>
       </div>
     </div>
@@ -366,12 +513,9 @@ const ScheduleView = ({ schedule, onMatchClick }) => {
   );
 
   return (
-    /* 1. MAIN WRAPPER: Must be relative and overflow-hidden to contain the absolute search bar */
-    <div className="h-full relative flex flex-col overflow-hidden">
-
-      {/* 2. SEARCH BAR: Absolute + Transparent. 
-        It sits on top (z-50) but doesn't have a background. */}
-      <div className="absolute top-0 inset-x-0 z-50 p-6 pb-2 bg-transparent pointer-events-none">
+    <div className="h-full overflow-hidden relative flex flex-col">
+      {/* STICKY SEARCH BAR */}
+      <div className="absolute top-0 inset-x-0 z-30 p-6 pb-2 bg-transparent pointer-events-none">
         <div className="relative group max-w-3xl mx-auto w-full pointer-events-auto">
           <input
             placeholder="Search teams..."
@@ -379,56 +523,111 @@ const ScheduleView = ({ schedule, onMatchClick }) => {
             value={filter}
             onChange={e => setFilter(e.target.value)}
           />
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 group-focus-within:text-orange-500 transition" size={20} />
+          <MagnifyingGlassIcon weight="duotone" className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 group-focus-within:text-orange-500 transition" size={20} />
         </div>
       </div>
 
-      {/* 3. SCROLLABLE CONTAINER: The mask is applied here. 
-        Everything in this div will fade out as it reaches the top. */}
-      <div className="h-full overflow-y-auto overflow-x-hidden [mask-image:linear-gradient(to_bottom,transparent_0px,transparent_60px,black_130px)]">
+      {/* MASKED SCROLL LIST */}
+      <div className="flex-1 overflow-y-auto overflow-x-hidden p-6 pt-28 pb-32 [mask-image:linear-gradient(to_bottom,transparent_0px,transparent_60px,black_110px)]">
+        <div className="max-w-4xl mx-auto w-full space-y-3">
+          {filtered.map(m => {
+            const isFinished = m.status === "Finished";
+            const p1Winner = isFinished && m.winner === m.p1 && m.p1 && m.p1 !== "BYE";
+            const p2Winner = isFinished && m.winner === m.p2 && m.p2 && m.p2 !== "BYE";
+            const courtColor = stringToColor(m.court + 'salt');
 
-        {/* 4. CONTENT AREA: We use pt-28 to push the first card below the search bar. */}
-        <div className="p-6 pt-28 max-w-4xl mx-auto w-full space-y-3 pb-32">
-          {filtered.map(m => (
-            <div key={m.id} className="bg-white dark:bg-zinc-900 p-4 rounded-2xl border border-zinc-300 dark:border-zinc-800 shadow-sm flex items-center justify-between group transition-all hover:border-orange-500/30">
-              {/* ... Rest of your card content (time, teams, trophy logic, buttons) ... */}
-              <div className="flex gap-6 items-center">
-                <div className="text-center min-w-[70px]">
-                  <div className="text-xl font-black font-mono text-zinc-900 dark:text-white leading-none mb-1">{m.time}</div>
-                  <div className="text-[9px] font-black text-white px-2 py-0.5 rounded uppercase tracking-wider" style={{ background: stringToColor(m.court) }}>{m.court}</div>
-                </div>
-                <div>
-                  <div className="font-black text-base uppercase tracking-tight flex items-center gap-2 flex-wrap">
-                    <span className={`${m.status === "Finished" && m.winner === m.p1 && m.p1 ? 'text-orange-600 dark:text-orange-500 flex items-center gap-1.5' : 'text-zinc-900 dark:text-zinc-100'}`}>
-                      {m.p1 || <span className="text-zinc-400 italic lowercase font-medium">{m.p1_label}</span>}
-                      {m.status === "Finished" && m.winner === m.p1 && m.p1 && <Trophy size={14} className="text-orange-500" />}
-                    </span>
-                    <span className="text-zinc-300 dark:text-zinc-700 text-xs font-black px-1">VS</span>
-                    <span className={`${m.status === "Finished" && m.winner === m.p2 && m.p2 ? 'text-orange-600 dark:text-orange-500 flex items-center gap-1.5' : 'text-zinc-900 dark:text-zinc-100'}`}>
-                      {m.p2 || <span className="text-zinc-400 italic lowercase font-medium">{m.p2_label}</span>}
-                      {m.status === "Finished" && m.winner === m.p2 && m.p2 && <Trophy size={14} className="text-orange-500" />}
-                    </span>
+            return (
+              <div
+                key={m.id}
+                className="bg-white dark:bg-zinc-900 p-4 rounded-2xl border border-zinc-300 dark:border-zinc-800 shadow-sm flex items-center justify-between group transition-all hover:border-orange-500/30"
+              >
+                <div className="flex gap-4 md:gap-6 items-center flex-1 min-w-0">
+                  {/* LEFT METADATA COLUMN - STACKED 3 ITEMS ON MOBILE */}
+                  <div className="text-center min-w-[65px] md:min-w-[75px] flex flex-col gap-1 items-center shrink-0">
+                    <div className="text-lg md:text-xl font-black font-mono text-zinc-900 dark:text-white leading-none">{m.time}</div>
+
+                    <div className="text-[9px] font-black text-white px-2 py-0.5 rounded uppercase tracking-wider w-full truncate" style={{ background: courtColor }}>
+                      {m.court}
+                    </div>
+
+                    {/* MOBILE ONLY MATCH # BADGE */}
+                    <div className="text-[9px] font-black bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-500 px-2 py-0.5 rounded uppercase tracking-wider border border-zinc-200 dark:border-zinc-700 w-full md:hidden">
+                      Match #{m.number}
+                    </div>
                   </div>
-                  <div className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mt-1">Match #{m.number} • {m.bracket} Round {m.round}</div>
+
+                  {/* TEAM LIST COLUMN - STACKED ON MOBILE WITH VS, INLINE ON DESKTOP */}
+                  <div className="flex-1 flex flex-col gap-0.5 min-w-0">
+                    <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-2 min-w-0">
+                      {/* Team 1 Container */}
+                      <div className="flex items-center gap-2 min-w-0">
+                        {p1Winner && <TrophyIcon weight="duotone" size={14} className="text-orange-500 shrink-0" />}
+                        <span className={`truncate text-sm md:text-base font-bold ${p1Winner ? 'text-orange-600 dark:text-orange-500' : 'text-zinc-900 dark:text-zinc-100'}`}>
+                          {m.p1 || <span className="italic opacity-50 font-normal">{m.p1_label}</span>}
+                        </span>
+                      </div>
+
+                      {/* VS SEPARATOR (Line on mobile, Text on Desktop) */}
+                      <div className="flex items-center justify-start md:block shrink-0 h-4 md:h-auto">
+                        <span className="text-zinc-400 dark:text-zinc-600 text-[9px] font-bold uppercase md:hidden tracking-widest opacity-40">vs</span>
+                        <span className="hidden md:block text-zinc-300 dark:text-zinc-700 text-xs font-black px-1">VS</span>
+                      </div>
+
+                      {/* Team 2 Container */}
+                      <div className="flex items-center gap-2 min-w-0">
+                        {p2Winner && <TrophyIcon weight="duotone" size={14} className="text-orange-500 shrink-0" />}
+                        <span className={`truncate text-sm md:text-base font-bold ${p2Winner ? 'text-orange-600 dark:text-orange-500' : 'text-zinc-900 dark:text-zinc-100'}`}>
+                          {m.p2 || <span className="italic opacity-50 font-normal">{m.p2_label}</span>}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* DESKTOP ONLY MATCH # BADGE - PLACED UNDERNEATH INLINE TEAMS */}
+                    <div className="hidden md:block text-[10px] font-black bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-500 px-2 py-0.5 rounded uppercase tracking-widest border border-zinc-200 dark:border-zinc-700 w-fit">
+                      Match #{m.number}
+                    </div>
+                  </div>
+                </div>
+
+                {/* ACTION AREA - NO CHEVRON, SYMMETRICAL STACKING ON MOBILE */}
+                <div className="ml-3 flex items-center shrink-0">
+                  {isFinished ? (
+                    <button
+                      onClick={() => onMatchClick(m)}
+                      className="text-right flex flex-col items-center md:items-end hover:bg-zinc-50 dark:hover:bg-zinc-800 p-2 rounded-xl transition group/btn min-w-[30px] md:min-w-[80px]"
+                    >
+                      {/* VERTICAL SCORE STACK - ALIGNS WITH TEAM NAMES ON MOBILE */}
+                      <div className="px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white text-[10px] font-black font-mono border border-zinc-200 dark:border-zinc-700 mb-auto md:hidden">
+                        {m.p1_sets}
+                      </div>
+
+                      <div className="text-orange-500 font-black text-[10px] uppercase tracking-wider flex items-center gap-1 my-1">
+                        <span className="md:hidden inline text-zinc-600"><LineVerticalIcon size={12} strokeWidth={4} /></span>
+                        <span className="hidden md:inline"><CheckCircleIcon weight="duotone" size={12} strokeWidth={4} /></span><span className="hidden md:inline">Finished</span>
+                      </div>
+
+                      <div className="hidden md:block text-sm font-black font-mono text-zinc-900 dark:text-zinc-300 group-hover/btn:text-orange-600 transition-colors">
+                        {m.p1_sets} - {m.p2_sets}
+                      </div>
+
+                      <div className="px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white text-[10px] font-black font-mono border border-zinc-200 dark:border-zinc-700 mt-auto md:hidden">
+                        {m.p2_sets}
+                      </div>
+                    </button>
+                  ) : (m.p1 && m.p2) && (
+                    <button
+                      onClick={() => onMatchClick(m)}
+                      className="bg-orange-600 hover:bg-orange-500 text-white p-2 md:px-4 md:py-2 rounded-xl shadow-lg shadow-orange-900/20 active:scale-95 transition-all flex items-center gap-2 group/btn"
+                    >
+                      <PlusIcon weight="bold" size={18} strokeWidth={3} className="group-hover/btn:rotate-90 transition-transform" />
+                      <span className="text-xs font-bold uppercase tracking-wider hidden md:inline">Report score</span>
+                    </button>
+                  )}
                 </div>
               </div>
-              <div className="flex items-center gap-4">
-                {m.winner ? (
-                  <button onClick={() => onMatchClick(m)} className="text-right shrink-0 hover:bg-zinc-50 dark:hover:bg-zinc-800 p-2 px-3 rounded-xl transition group border border-transparent hover:border-zinc-200 dark:hover:border-zinc-700">
-                    <div className="text-orange-500 font-black text-[10px] uppercase tracking-wider mb-0.5 flex items-center justify-end gap-1">Finished</div>
-                    <div className="text-sm font-black font-mono text-zinc-900 dark:text-zinc-300">{m.p1_sets} - {m.p2_sets}</div>
-                  </button>
-                ) : (m.p1 && m.p2) && (
-                  <button onClick={() => onMatchClick(m)} className="bg-orange-600 hover:bg-orange-500 text-white text-[10px] font-black uppercase px-5 py-2.5 rounded-xl transition shadow-lg shadow-orange-600/20 active:scale-95 shrink-0">Report</button>
-                )}
-              </div>
-            </div>
-          ))}
-          {filtered.length === 0 && (
-            <div className="text-center py-20 text-zinc-400 font-black uppercase tracking-widest text-xs">
-              No matching matches found
-            </div>
-          )}
+            );
+          })}
+          {filtered.length === 0 && <div className="text-center py-20 text-zinc-400 font-black uppercase tracking-widest text-xs">No matching matches found</div>}
         </div>
       </div>
     </div>
@@ -438,24 +637,33 @@ const ScheduleView = ({ schedule, onMatchClick }) => {
 // --- DASHBOARD COMPONENTS ---
 
 const DashCard = ({ t, isAdmin, onSelect, onEdit }) => (
-  <div onClick={() => onSelect(t.id)} className="bg-white dark:bg-zinc-900 rounded-3xl p-5 shadow-sm border border-zinc-200 dark:border-zinc-800 cursor-pointer hover:shadow-2xl hover:-translate-y-1.5 transition-all relative overflow-hidden group">
-    <div className="absolute top-0 left-0 w-2 h-full bg-orange-600 group-hover:w-3 transition-all"></div>
+  <div
+    onClick={() => onSelect(t.id)}
+    className="block bg-white dark:bg-zinc-800 p-6 rounded-xl shadow-sm dark:shadow-none border border-gray-200 dark:border-zinc-700 relative group hover:shadow-md hover:scale-[1.02] transition will-change-transform transform-gpu cursor-pointer"
+  >
     <div className="flex justify-between items-start mb-4">
-      <h3 className="font-black text-2xl text-zinc-900 dark:text-white truncate pr-4 leading-none">{t.name}</h3>
-      {isAdmin && <button onClick={(e) => { e.stopPropagation(); onEdit(t.id); }} className="text-zinc-300 hover:text-orange-500 transition p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-2xl shrink-0"><SlidersHorizontal size={18} /></button>}
+      <div>
+        <h2 className="text-xl font-bold truncate text-zinc-900 dark:text-white group-hover:text-orange-500 dark:group-hover:text-orange-400 transition">
+          {t.name}
+        </h2>
+        <div className="text-xs text-zinc-400 dark:text-zinc-500 mt-1 font-mono">{t.date} {t.start_time}</div>
+      </div>
+      <span className="bg-orange-100 dark:bg-orange-900/50 text-orange-700 dark:text-orange-300 text-[10px] px-2 py-1 rounded font-mono border border-orange-200 dark:border-orange-800 uppercase tracking-tight shrink-0">
+        {t.type}
+      </span>
     </div>
-    <div className="space-y-4">
-      <div className="flex items-center gap-3 text-zinc-800 dark:text-zinc-200 font-bold text-base tracking-tight">
-        <div className="p-1.5 bg-zinc-50 dark:bg-zinc-800 rounded-lg"><Calendar size={20} className="text-orange-600 shrink-0" /></div>
-        <span>{t.date} <span className="text-zinc-300 dark:text-zinc-700 mx-1">/</span> {t.start_time}</span>
-      </div>
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3 text-zinc-800 dark:text-zinc-200 font-bold text-base tracking-tight">
-          <div className="p-1.5 bg-zinc-50 dark:bg-zinc-800 rounded-lg"><Users size={20} className="text-orange-600 shrink-0" /></div>
-          <span>{t.team_count} Teams</span>
-        </div>
-        <span className="bg-zinc-100 dark:bg-zinc-800 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-zinc-200 dark:border-zinc-700 text-zinc-500">{t.type}</span>
-      </div>
+    <div className="flex gap-4 text-sm text-zinc-500 dark:text-zinc-400 items-center">
+      <div className="flex items-center gap-1.5 font-medium"><UsersFourIcon weight="duotone" size={16} className="text-orange-500" /> {t.team_count} Teams</div>
+      <div className="flex items-center gap-1.5 font-medium"><CourtBasketballIcon weight="duotone" size={16} className="text-orange-500" /> {t.court_count} Courts</div>
+      {isAdmin && (
+        <button
+          onClick={(e) => { e.stopPropagation(); onEdit(t.id); }}
+          className="ml-auto hover:text-orange-500 transition z-10 h-8 w-8 flex items-center justify-center rounded-full text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-700"
+          title="Tournament Settings"
+        >
+          <SlidersHorizontalIcon weight="duotone" size={18} />
+        </button>
+      )}
     </div>
   </div>
 );
@@ -464,57 +672,67 @@ const Dashboard = ({ data, onSelect, onEdit, isAdmin, backendDown, isInitialLoad
   const [showPast, setShowPast] = useState(false);
   const [showAllFuture, setShowAllFuture] = useState(false);
 
-  const futureAll = Object.values(data.future || {});
-  const future = showAllFuture ? futureAll : futureAll.slice(0, 4);
+  const future = Object.values(data.future || {});
+  const displayedFuture = showAllFuture ? future : future.slice(0, 4);
   const live = Object.values(data.live || {});
   const past = Object.values(data.past || {});
 
   return (
-    <div className="space-y-16 animate-in slide-in-from-bottom-4 duration-500 px-2">
+    <div className="space-y-12 pb-24 animate-in slide-in-from-bottom-4 duration-500 px-4">
       <ConnectivityAlert backendDown={backendDown} isInitialLoad={isInitialLoad} />
 
       {live.length > 0 && (
         <section>
-          <h2 className="text-[10px] font-black text-green-500 uppercase tracking-[0.4em] mb-6 flex items-center gap-3">
-            <div className="w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse shadow-lg shadow-green-500/50" /> Live Events
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="flex items-center gap-2 mb-4">
+            <VolleyballIcon size={16} className="text-green-500 animate-pulse" />
+            <h3 className="text-sm font-bold text-zinc-500 uppercase tracking-wider">Live Now</h3>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {live.map(t => <DashCard key={t.id} t={t} isAdmin={isAdmin} onSelect={onSelect} onEdit={onEdit} />)}
           </div>
         </section>
       )}
 
       <section>
-        <h2 className="text-[10px] font-black text-zinc-400 dark:text-zinc-600 uppercase tracking-[0.4em] mb-6 flex items-center gap-3">
-          <Calendar size={18} /> Upcoming
-        </h2>
-        {futureAll.length > 0 ? (
+        <div className="flex items-center gap-2 mb-4">
+          <CalendarBlankIcon weight='bold' size={16} className="text-zinc-500" />
+          <h3 className="text-sm font-bold text-zinc-500 uppercase tracking-wider">Upcoming</h3>
+        </div>
+        {future.length > 0 ? (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {future.map(t => <DashCard key={t.id} t={t} isAdmin={isAdmin} onSelect={onSelect} onEdit={onEdit} />)}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {displayedFuture.map(t => <DashCard key={t.id} t={t} isAdmin={isAdmin} onSelect={onSelect} onEdit={onEdit} />)}
             </div>
-            {futureAll.length > 4 && (
-              <div className="mt-8 text-center">
+            {future.length > 4 && (
+              <div className="mt-6 text-center">
                 <button
                   onClick={() => setShowAllFuture(!showAllFuture)}
-                  className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 hover:text-orange-500 transition border-b-2 border-transparent hover:border-orange-500 pb-1"
+                  className="text-sm text-zinc-500 hover:text-orange-500 font-medium transition flex items-center justify-center gap-1 mx-auto w-full py-2 bg-white dark:bg-zinc-800 rounded-xl border border-gray-100 dark:border-zinc-800 shadow-sm transition active:scale-95"
                 >
-                  {showAllFuture ? 'Show Less' : `Show All (${futureAll.length})`}
+                  {showAllFuture ? 'Show Less' : `Show All (${future.length})`}
+                  {showAllFuture ? <CaretUpIcon weight="bold" size={16} /> : <CaretDownIcon weight="bold" size={16} />}
                 </button>
               </div>
             )}
           </>
-        ) : <div className="p-16 text-center rounded-3xl border-2 border-dashed border-zinc-300 dark:border-zinc-800 text-zinc-400 text-xs font-black uppercase tracking-[0.3em]">No Upcoming Events</div>}
+        ) : <div className="p-12 text-center rounded-xl border-2 border-dashed border-zinc-200 dark:border-zinc-800 text-zinc-400 text-xs font-bold uppercase tracking-widest">No scheduled events</div>}
       </section>
 
       {past.length > 0 && (
         <section>
-          <button onClick={() => setShowPast(!showPast)} className="w-full flex items-center justify-between group py-6 border-t border-zinc-300 dark:border-zinc-800 transition-colors hover:border-zinc-400">
-            <h2 className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.4em]">Archive</h2>
-            {showPast ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+          <button
+            onClick={() => setShowPast(!showPast)}
+            className="w-full flex items-center justify-between group mb-4 focus:outline-none"
+          >
+            <div className="flex items-center gap-2">
+              <ClockCounterClockwiseIcon weight='bold' size={16} className={`transition-colors ${showPast ? 'text-orange-500' : 'text-zinc-500'}`} />
+              <h3 className="text-sm font-bold text-zinc-500 group-hover:text-zinc-700 dark:group-hover:text-zinc-300 uppercase tracking-wider transition">Archive</h3>
+            </div>
+            {showPast ? <CaretUpIcon weight="bold" size={18} className="text-zinc-400 group-hover:text-orange-500 transition" /> : <CaretDownIcon weight="bold" size={18} className="text-zinc-400 group-hover:text-orange-500 transition" />}
           </button>
+
           {showPast && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4 opacity-75 hover:opacity-100 transition-opacity">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 opacity-75 hover:opacity-100 transition duration-300">
               {past.map(t => <DashCard key={t.id} t={t} isAdmin={isAdmin} onSelect={onSelect} onEdit={onEdit} />)}
             </div>
           )}
@@ -542,6 +760,11 @@ export default function App() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [darkMode, setDarkMode] = useState(() => localStorage.theme === 'dark');
   const [backendDown, setBackendDown] = useState(false);
+
+  const [showSettings, setShowSettings] = useState(false);
+  const [editTarget, setEditTarget] = useState(null);
+  const [scoreMatch, setScoreMatch] = useState(null);
+  const [showLogin, setShowLogin] = useState(false);
 
   const tIdRef = useRef(tId);
   useEffect(() => {
@@ -675,11 +898,6 @@ export default function App() {
     else setTData(null);
   }, [tId]);
 
-  const [showSettings, setShowSettings] = useState(false);
-  const [editTarget, setEditTarget] = useState(null);
-  const [scoreMatch, setScoreMatch] = useState(null);
-  const [showLogin, setShowLogin] = useState(false);
-
   const openCreate = () => { setEditTarget(null); setShowSettings(true); };
   const openEdit = async (id) => {
     try {
@@ -703,7 +921,6 @@ export default function App() {
   };
 
   const handleLogout = () => {
-    // FIXED: Only remove authentication keys, preserving 'theme'
     localStorage.removeItem('volleyToken');
     window.location.reload();
   };
@@ -714,7 +931,7 @@ export default function App() {
       <nav className="bg-white/95 dark:bg-zinc-900/95 backdrop-blur-lg border-b border-zinc-300 dark:border-zinc-800 sticky top-0 z-[100] px-3 sm:px-6 py-3 sm:py-4 flex justify-between items-center shadow-md shrink-0">
         <div className="flex items-center gap-2 sm:gap-4 cursor-pointer group select-none shrink-0" onClick={() => { setView('dashboard'); setTId(null); }}>
           <div className="p-1.5 sm:p-2.5 bg-orange-600 rounded-xl group-hover:rotate-12 transition-transform shadow-lg shadow-orange-600/30 active:scale-90">
-            <Activity className="text-white" size={20} />
+            <VolleyballIcon className="text-white" size={20} />
           </div>
           <div className="hidden sm:block">
             <h1 className="text-2xl font-black tracking-tighter leading-none text-zinc-900 dark:text-white">VolleyManager</h1>
@@ -724,7 +941,7 @@ export default function App() {
 
         {/* Center Title */}
         <div className="absolute left-1/2 -translate-x-1/2 text-center pointer-events-none w-full max-w-[140px] xs:max-w-[180px] sm:max-w-[400px]">
-          <div className="font-black uppercase text-[10px] sm:text-sm tracking-[0.1em] sm:tracking-[0.3em] text-zinc-900 dark:text-white truncate leading-none mb-1">
+          <div className="font-black uppercase text-[10px] sm:text-sm text-zinc-900 dark:text-white truncate tracking-widest leading-none mb-1">
             {view === 'tournament' ? tData?.tournament.name : 'Dashboard'}
           </div>
           {view === 'tournament' && tData && (
@@ -739,19 +956,19 @@ export default function App() {
             <>
               {view === 'dashboard' ? (
                 <button onClick={openCreate} className="bg-orange-600 hover:bg-orange-500 text-white px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl flex items-center gap-2 text-[9px] sm:text-[10px] font-black uppercase tracking-wider sm:tracking-[0.2em] transition shadow-xl shadow-orange-600/20 active:scale-95 shrink-0">
-                  <Plus size={16} strokeWidth={4} /> <span className="hidden xs:inline">Create</span>
+                  <PlusIcon weight="bold" size={16} strokeWidth={4} /> <span className="hidden xs:inline">Create</span>
                 </button>
               ) : (
                 <button onClick={() => openEdit(tId)} className="text-zinc-500 hover:text-orange-500 transition p-2 sm:p-3 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-2xl active:scale-90">
-                  <SlidersHorizontal size={18} sm:size={22} strokeWidth={2.5} />
+                  <SlidersHorizontalIcon weight="duotone" size={18} sm:size={22} strokeWidth={2.5} />
                 </button>
               )}
               <div className="w-px h-5 sm:h-6 bg-zinc-200 dark:bg-zinc-800 mx-0.5 sm:mx-1" />
-              <button onClick={handleLogout} title="Sign Out" className="text-zinc-400 hover:text-red-500 transition active:scale-90 shrink-0"><LogOut size={18} sm:size={22} /></button>
+              <button onClick={handleLogout} title="Sign Out" className="text-zinc-400 hover:text-red-500 transition active:scale-90 shrink-0"><SignOutIcon weight='duotone' size={18} sm:size={22} /></button>
             </>
           ) : (
-            <button onClick={() => setShowLogin(true)} className="text-orange-600 font-black flex items-center gap-1.5 text-[9px] sm:text-[10px] uppercase tracking-widest hover:text-orange-500 transition group p-1.5 sm:p-2 rounded-xl hover:bg-orange-50 dark:hover:bg-orange-950/20">
-              <Lock size={12} sm:size={14} className="group-hover:-translate-y-0.5 transition-transform" /> <span className="hidden xs:inline">Login</span>
+            <button onClick={() => setShowLogin(true)} className="ml-auto hover:text-orange-500 transition z-10 h-8 w-8 flex items-center justify-center rounded-full text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-700">
+              <SignInIcon weight='duotone' size={18} />
             </button>
           )}
         </div>
@@ -759,7 +976,7 @@ export default function App() {
 
       <main className="flex-1 overflow-hidden relative">
         {view === 'dashboard' ? (
-          <div className="h-full overflow-y-auto pt-8 sm:pt-16 pb-32">
+          <div className="h-full overflow-y-auto pt-8 sm:pt-12">
             <div className="container mx-auto max-w-5xl">
               <Dashboard data={data} onSelect={(id) => { setTId(id); setView('tournament'); }} onEdit={openEdit} isAdmin={isAdmin} backendDown={backendDown} isInitialLoad={isInitialLoad} />
             </div>
@@ -771,8 +988,8 @@ export default function App() {
             {isLoading && !tData ? (
               <div className="flex items-center justify-center h-full flex-col gap-6">
                 <div className="relative">
-                  <Activity className="text-orange-100 dark:text-zinc-900" size={80} />
-                  <Loader2 className="animate-spin text-orange-600 absolute inset-0 m-auto" size={48} />
+                  <VolleyballIcon className="text-orange-100 dark:text-zinc-900" size={80} />
+                  <CircleNotchIcon weight="bold" className="animate-spin text-orange-600 absolute inset-0 m-auto" size={48} />
                 </div>
                 <span className="text-[11px] font-black uppercase tracking-[0.4em] text-zinc-400 animate-pulse">Syncing Bracket State...</span>
               </div>
@@ -790,16 +1007,22 @@ export default function App() {
         {view === 'tournament' && (
           <button onClick={() => setTab(tab === 'bracket' ? 'schedule' : 'bracket')} className="p-4 sm:p-5 bg-orange-600 text-white rounded-[1.5rem] sm:rounded-[2rem] shadow-2xl transition hover:scale-110 active:scale-95 shadow-orange-900/40 border-2 border-orange-400/20 group relative overflow-hidden">
             <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-            {tab === 'bracket' ? <List size={24} strokeWidth={3} className="sm:size-7" /> : <GitMerge size={24} strokeWidth={3} className="sm:size-7" />}
+            {tab === 'bracket' ? <CalendarDotsIcon weight='duotone' size={24} strokeWidth={3} className="sm:size-7" /> : <TreeStructureIcon weight="duotone" size={24} strokeWidth={3} className="sm:size-7" />}
           </button>
         )}
         <button onClick={() => setDarkMode(!darkMode)} title="Toggle Theme" className="p-4 sm:p-5 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-[1.5rem] sm:rounded-[2rem] shadow-2xl transition hover:scale-110 active:scale-95 border-2 border-zinc-700 dark:border-zinc-300 group">
-          {darkMode ? <Sun size={24} strokeWidth={2.5} className="sm:size-7" /> : <Moon size={24} strokeWidth={2.5} className="sm:size-7" />}
+          {darkMode ? <SunIcon weight="duotone" size={24} strokeWidth={2.5} className="sm:size-7" /> : <MoonIcon weight='duotone' size={24} strokeWidth={2.5} className="sm:size-7" />}
         </button>
       </div>
 
       {/* Modals */}
-      <Modal isOpen={showSettings} onClose={() => setShowSettings(false)} title={editTarget ? 'Modify Event' : 'Initialize Event'}>
+      <Modal
+        isOpen={showSettings}
+        onClose={() => setShowSettings(false)}
+        title={editTarget ? 'Settings' : 'New Tournament'}
+        icon={editTarget ? SlidersHorizontalIcon : PlusIcon}
+        customWidth="max-w-lg"
+      >
         <SettingsForm
           tournament={editTarget}
           onSubmit={() => { setShowSettings(false); loadDashboard(); }}
@@ -807,47 +1030,72 @@ export default function App() {
         />
       </Modal>
 
-      <Modal isOpen={!!scoreMatch} onClose={() => setScoreMatch(null)} title={`Match Protocol #${scoreMatch?.number}`}>
-        {scoreMatch && <ScoreForm
-          match={scoreMatch}
-          isAdmin={isAdmin}
-          onClear={async (id, c) => { await api.post(`/tournaments/${tId}/report`, { id, code: c, clear: true }); setScoreMatch(null); }}
-          onSubmit={async (id, s, c) => { await api.post(`/tournaments/${tId}/report`, { id, sets: s, code: c }); setScoreMatch(null); }}
-        />}
+      <Modal isOpen={!!scoreMatch} onClose={() => setScoreMatch(null)} customWidth="max-w-md">
+        {scoreMatch && (
+          <div className="p-0">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="font-bold text-xl flex items-center gap-2 text-zinc-900 dark:text-white leading-none">
+                <TrophyIcon weight="duotone" className="text-orange-500" size={24} />
+                Match #{scoreMatch.number || "?"}
+              </h3>
+              <button onClick={() => setScoreMatch(null)} className="text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition">
+                <XIcon size={24} />
+              </button>
+            </div>
+            <ScoreForm
+              match={scoreMatch}
+              isAdmin={isAdmin}
+              onClear={async (id, c) => { await api.post(`/tournaments/${tId}/report`, { id, code: c, clear: true }); setScoreMatch(null); }}
+              onSubmit={async (id, s, c) => { await api.post(`/tournaments/${tId}/report`, { id, sets: s, code: c }); setScoreMatch(null); }}
+            />
+          </div>
+        )}
       </Modal>
 
-      <Modal isOpen={showLogin} onClose={() => setShowLogin(false)} title="System Access">
-        <form
-          key={showLogin}
-          onSubmit={handleLogin}
-          className="space-y-6"
-          autoComplete="on"
-        >
-          <div className="space-y-2">
-            <label htmlFor="login-username" className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">Identity</label>
+      <Modal isOpen={showLogin} onClose={() => setShowLogin(false)} customWidth="max-w-md">
+        <div className="p-0">
+          <div className="flex justify-center mb-4">
+            <div className="flex items-center bg-zinc-100 dark:bg-zinc-800 p-2 rounded-full">
+              <SignInIcon weight='duotone' className="text-orange-500" size={24} />
+            </div>
+          </div>
+          <h2 className="text-lg font-bold mb-4 text-center text-zinc-900 dark:text-white leading-none">Admin Login</h2>
+          <form onSubmit={handleLogin} className="space-y-3" autoComplete="on">
             <input
               id="login-username"
               name="username"
-              placeholder="Admin UID"
+              placeholder="Username"
+              autofocus
               required
               autoComplete="username"
-              className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-800 p-4 rounded-2xl dark:text-white outline-none focus:border-orange-500 transition font-bold"
+              className="w-full bg-zinc-50 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-600 rounded p-3 focus:border-orange-500 outline-none transition text-zinc-900 dark:text-white"
             />
-          </div>
-          <div className="space-y-2">
-            <label htmlFor="login-password" className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">Secret Key</label>
             <input
               id="login-password"
               name="password"
               type="password"
-              placeholder="••••••••"
+              placeholder="Password"
               required
               autoComplete="current-password"
-              className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-800 p-4 rounded-2xl dark:text-white outline-none focus:border-orange-500 transition font-bold"
+              className="w-full bg-zinc-50 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-600 rounded p-3 mb-6 focus:border-orange-500 outline-none transition text-zinc-900 dark:text-white"
             />
-          </div>
-          <button type="submit" className="w-full bg-orange-600 hover:bg-orange-500 text-white py-5 rounded-2xl font-black uppercase tracking-[0.2em] text-xs shadow-2xl shadow-orange-600/30 transition active:scale-95 mt-4">Authenticate</button>
-        </form>
+            <div className="flex justify-between items-center pt-3">
+              <button
+                type="button"
+                onClick={() => setShowLogin(false)}
+                className="px-3 py-1 text-zinc-400 text-sm hover:text-zinc-600 dark:hover:text-white transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="bg-orange-600 hover:bg-orange-500 text-white px-6 py-1 rounded font-bold shadow-lg shadow-orange-900/20 active:scale-95 transition"
+              >
+                Login
+              </button>
+            </div>
+          </form>
+        </div>
       </Modal>
     </div>
   );
