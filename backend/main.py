@@ -6,7 +6,7 @@ import routes
 
 init_db()
 
-app = FastAPI(title="Tournament Manager API")
+app = FastAPI(title="VolleyManager API")
 
 app.add_middleware(
     CORSMiddleware,
@@ -16,7 +16,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(routes.router)
+app.include_router(routes.router, prefix="/api")
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8080, reload=True)
