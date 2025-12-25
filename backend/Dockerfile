@@ -2,18 +2,15 @@ FROM python:3.14-alpine
 
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
-# Set a default PORT (can be overridden at runtime)
 ENV PORT=8080
-
 WORKDIR /app
 
-# Install dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-RUN pip install gunicorn
 
 COPY . .
-RUN mkdir -p /data
 
+RUN mkdir -p /app/data
 EXPOSE $PORT
-CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:${PORT} --workers 4 app:app"]
+
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]

@@ -1,15 +1,18 @@
 services:
-  volley-bracket:
-    build:
-      context: .
-    container_name: volley-manager
-    env_file:
-      - .env
-    environment:
-      DB_PATH: /data
+  vollev-backend:
+    build: ./backend
+    container_name: bracket-api
     volumes:
-      - database:/data
-    restart: unless-stopped
+      - database:/app/data
+    environment:
+      - DB_PATH=/app/data/tournaments.db
+    restart: always
+
+  # The Frontend
+  volley-frontend:
+    build: ./frontend
+    container_name: bracket-web
+    restart: always
 
 volumes:
   database:

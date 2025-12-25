@@ -8,14 +8,8 @@ import {
   CircleNotchIcon, CheckCircleIcon, CaretDownIcon, CaretUpIcon
 } from "@phosphor-icons/react"
 
-// --- API CONFIGURATION ---
-const getBackendHost = () => {
-  const host = window.location.hostname || 'localhost';
-  return host;
-};
-
-const API_BASE = `${window.location.protocol}//${getBackendHost()}:8080`;
-const WS_URL = `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${getBackendHost()}:8080/ws`;
+const API_BASE = "/api";
+const WS_URL = `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws`;
 
 const getToken = () => localStorage.getItem('volleyToken');
 
@@ -508,8 +502,9 @@ const MatchCard = ({ match, onClick }) => {
 const ScheduleView = ({ schedule, onMatchClick }) => {
   const [filter, setFilter] = useState("");
   const filtered = schedule.filter(m =>
-    (m.p1 || "").toLowerCase().includes(filter.toLowerCase()) ||
-    (m.p2 || "").toLowerCase().includes(filter.toLowerCase())
+    (m.p1 || m.p1_label).toLowerCase().includes(filter.toLowerCase()) ||
+    (m.p2 || m.p2_label).toLowerCase().includes(filter.toLowerCase()) ||
+    ("#" + m.number.toString() || m.number.toString()).toLowerCase().includes(filter.toLowerCase())
   );
 
   return (
@@ -851,6 +846,15 @@ export default function App() {
       body.style.backgroundColor = '#fafafa';
     }
   }, [darkMode]);
+
+  useEffect(() => {
+    // Dynamic tab title handling
+    if (view === 'tournament' && tData) {
+      document.title = `${tData.tournament.name} | VolleyManager`;
+    } else {
+      document.title = "VolleyManager";
+    }
+  }, [view, tData]);
 
   const checkAuth = async () => {
     if (getToken()) {
