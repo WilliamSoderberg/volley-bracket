@@ -827,23 +827,31 @@ export default function App() {
       } else {
         if (!isLoading) checkAuth();
       }
-    }, 5000);
+    }, 30000);
     return () => clearInterval(monitor);
   }, [backendDown, isLoading]);
 
   useEffect(() => {
     const root = window.document.documentElement;
     const body = window.document.body;
+
+    let themeColorMeta = document.querySelector('meta[name="theme-color"]');
+    if (!themeColorMeta) {
+      themeColorMeta = document.createElement('meta');
+      themeColorMeta.name = 'theme-color';
+      document.head.appendChild(themeColorMeta);
+    }
+
     if (darkMode) {
       root.classList.add('dark');
       localStorage.setItem('theme', 'dark');
-      root.style.backgroundColor = '#09090b';
       body.style.backgroundColor = '#09090b';
+      themeColorMeta.content = '#18181b';
     } else {
       root.classList.remove('dark');
       localStorage.setItem('theme', 'light');
-      root.style.backgroundColor = '#fafafa';
       body.style.backgroundColor = '#fafafa';
+      themeColorMeta.content = '#ffffff';
     }
   }, [darkMode]);
 
